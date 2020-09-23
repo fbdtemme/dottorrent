@@ -4,7 +4,7 @@ namespace dottorrent {
 
 // ----------------------------------------------------------------------------------------------//
 
-#if defined(DOTTORRENT_CRYPTO_OPENSSL)
+#if defined(DOTTORRENT_USE_OPENSSL)
 
 sha512_hasher::sha512_hasher()
         : context_()

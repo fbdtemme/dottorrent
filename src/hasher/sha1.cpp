@@ -2,7 +2,7 @@
 
 namespace dottorrent {
 
-#if defined(DOTTORRENT_CRYPTO_OPENSSL)
+#if defined(DOTTORRENT_USE_OPENSSL)
 
 sha1_hasher::sha1_hasher()
         : context_()
@@ -33,7 +33,7 @@ void sha1_hasher::finalize_to(std::span<std::byte> out)
 
 #endif
 
-#if defined(DOTTORRENT_CRYPTO_BOTAN)
+#if defined(DOTTORRENT_USE_BOTAN)
 
 sha1_hasher::sha1_hasher()
         : context_()
@@ -55,7 +55,7 @@ auto sha1_hasher::finalize() -> sha1_hasher::hash_type
 #endif
 
 
-#if defined(DOTTORRENT_CRYPTO_CRYPTOPP)
+#if defined(DOTTORRENT_USE_CRYPTOPP)
 
 sha1_hasher::sha1_hasher()
         : context_()

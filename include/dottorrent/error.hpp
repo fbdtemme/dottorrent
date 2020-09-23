@@ -5,7 +5,7 @@
 namespace dottorrent {
 
 class bad_torrent_file : public std::runtime_error {
-
+    using std::runtime_error::runtime_error;
 };
 
 struct parse_error : std::runtime_error

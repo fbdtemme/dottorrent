@@ -10,7 +10,7 @@ function(log_not_found library)
     message(STATUS "Fetching dependency ${library}...")
 endfunction()
 
-find_package(Microsoft.GSL CONlog_foundFIG QUIET)
+find_package(Microsoft.GSL CONFIG QUIET)
 if (Microsoft.GSL_FOUND)
     log_found(Microsoft.GSL)
 else()

@@ -1,5 +1,7 @@
 #include "dottorrent/chunk_reader.hpp"
 
+#include <bit>
+
 namespace dottorrent {
 
 chunk_reader::chunk_reader(file_storage& storage, std::size_t block_size, std::size_t max_memory)
@@ -8,7 +10,7 @@ chunk_reader::chunk_reader(file_storage& storage, std::size_t block_size, std::s
         , pool_(max_memory / chunk_size_)
 {
     Expects(storage.piece_size() >= 16_KiB);
-    Expects(detail::is_power_of_2(storage.piece_size()));
+    Expects(std::has_single_bit(storage.piece_size()));
     Expects(chunk_size_ % storage.piece_size() == 0);
     Expects(max_memory > chunk_size_);
 }

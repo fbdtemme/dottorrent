@@ -2,7 +2,7 @@
 
 namespace dottorrent {
 
-#if defined(DOTTORRENT_CRYPTO_OPENSSL)
+#if defined(DOTTORRENT_USE_OPENSSL)
 
 md5_hasher::md5_hasher()
         : context_()
@@ -36,7 +36,7 @@ auto md5_hasher::finalize() -> md5_hasher::hash_type
 #endif
 
 
-#if defined(DOTTORRENT_CRYPTO_BOTAN)
+#if defined(DOTTORRENT_USE_BOTAN)
 
 md5_hasher::md5_hasher()
         : constext_()

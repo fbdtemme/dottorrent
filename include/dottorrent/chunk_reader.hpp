@@ -1,10 +1,7 @@
 #pragma once
-#include <algorithm>
 #include <atomic>
 #include <cstdint>
-#include <filesystem>
 #include <mutex>
-#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -18,8 +15,6 @@
 #include "dottorrent/object_pool.hpp"
 
 namespace dottorrent {
-
-namespace fs = std::filesystem;
 
 class chunk_reader
 {

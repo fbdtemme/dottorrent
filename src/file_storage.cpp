@@ -73,7 +73,7 @@ void file_storage::set_piece_size(std::size_t size) {
     // These conditions are only required in the v2-spec.
     // They are assumed to hold for v1 as well when creating new torrents.
     Expects(size >= 16_KiB);                    // minimum size is 16 KiB
-    Expects(detail::is_power_of_2(size));       // size must be a power of two
+    Expects(std::has_single_bit(size));       // size must be a power of two
 
     piece_size_ = size;
 }
