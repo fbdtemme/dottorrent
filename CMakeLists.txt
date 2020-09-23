@@ -64,12 +64,10 @@ else()
     message(FATAL_ERROR "Undefined crypto library: ${DOTTORRENT_CRYPTO_LIB}")
 endif()
 
+include(external/external.cmake)
 
 find_package(Threads REQUIRED)
 find_package(TBB REQUIRED)
-find_package(bencode REQUIRED)
-find_package(expected-lite REQUIRED)
-find_package(Microsoft.GSL CONFIG REQUIRED)
 
 
 target_include_directories(dottorrent PUBLIC
@@ -78,10 +76,9 @@ target_include_directories(dottorrent PUBLIC
         )
 
 target_link_libraries(dottorrent
-    INTERFACE
+    PUBLIC
         Microsoft.GSL::GSL
         bencode::bencode
-    PUBLIC
         TBB::tbb
         Threads::Threads
         fmt::fmt
@@ -145,13 +142,6 @@ if (NOT fmt_FOUND)
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
 
-endif()
-
-if (NOT expected-lite_FOUND)
-    message(STATUS "Adding expected-lite to install set")
-    install(TARGETS expected-lite
-            EXPORT ${dottorrent_targets_export_name}
-            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
 if (NOT Microsoft.GSL_FOUND)
