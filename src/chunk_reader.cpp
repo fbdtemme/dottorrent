@@ -26,7 +26,12 @@ void chunk_reader::register_checksum_queue(std::shared_ptr<checksum_queue> q)
 }
 
 void chunk_reader::start() {
-    Ensures(!hash_queues_.empty() || !checksum_queues_.empty());
+
+    // set hasher to completed and return without doying any work
+    if (!hash_queues_.empty() && !checksum_queues_.empty()) {
+        started_.store(true, std::memory_order_release);
+        return;
+    }
 
     if (started()) return;
 
