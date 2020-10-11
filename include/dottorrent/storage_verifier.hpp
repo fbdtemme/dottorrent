@@ -58,8 +58,6 @@ struct storage_verifier_options
     /// The bittorrent procolol version to verify chunks for.
     /// Hybrid will verify both v1 and v2 hashes.
     protocol protocol_version = protocol::v1;
-    /// The per file checksums to verify in the file list.
-    checksum_options checksums = checksum_options::none;
     /// The minimum size of a block to read from disk.
     /// For piece sizes smaller than the min_chunk_size multiple pieces
     /// will be read in a single block for faster disk I/O.
@@ -90,7 +88,6 @@ public:
             const storage_verifier_options& options = {})
             : storage_(storage)
             , protocol_(options.protocol_version)
-            , checksums_(options.checksums)
             , memory_({options.min_chunk_size, options.max_memory})
             , threads_(options.threads)
             , reader_()
@@ -274,7 +271,6 @@ public:
 private:
     std::reference_wrapper<file_storage> storage_;
     protocol protocol_;
-    checksum_options checksums_;
     memory_options memory_;
     std::size_t threads_;
 
