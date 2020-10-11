@@ -16,7 +16,7 @@ bencode::bvalue make_bvalue_infodict_v1(const metafile& m)
     if (storage.file_mode() == file_mode::single) {
         auto& file = storage.at(0);
         info.insert_or_assign("length", file.file_size());
-        info.insert_or_assign("name", file.path().filename());
+        info.insert_or_assign("name", file.path().filename().string());
     }
     else if (storage.file_mode() == file_mode::multi) {
         bencode::bvalue file_list(bc::btype::list);
@@ -63,7 +63,7 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
     const auto& storage = m.storage();
 
     if (m.name().empty()) {
-        info.insert_or_assign("name", storage.root_directory().filename());
+        info.insert_or_assign("name", storage.root_directory().filename().string());
     }
     else {
         info.insert_or_assign("name", m.name());
@@ -120,7 +120,7 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
     if (storage.file_mode() == file_mode::single) {
         auto& file = storage[0];
         info.insert_or_assign("length", file.file_size());
-        info.insert_or_assign("name", file.path().filename());
+        info.insert_or_assign("name", file.path().filename().string());
     }
     else if (storage.file_mode() == file_mode::multi) {
         bencode::bvalue file_list(bc::btype::list);
@@ -184,7 +184,7 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
     info.insert_or_assign("file tree", std::move(bfile_tree));
 
     if (m.name().empty()) {
-        info.insert_or_assign("name", storage.root_directory().filename());
+        info.insert_or_assign("name", storage.root_directory().filename().string());
     }
     else {
         info.insert_or_assign("name", m.name());
@@ -211,7 +211,6 @@ bencode::bvalue make_bvalue_v1(const metafile& m)
     btorrent.insert_or_assign("comment", m.comment());
     btorrent.insert_or_assign("created by", m.created_by());
     btorrent.insert_or_assign("creation date", m.creation_date().count());
-    btorrent.insert_or_assign("name", m.name());
     btorrent.insert_or_assign("private", m.is_private());
 
     if (!m.collections().empty()) {
@@ -343,7 +342,7 @@ bencode::bvalue make_bvalue_hybrid(const metafile& m)
 
     std::size_t f_idx = 0;
     for (const auto& file: storage) {
-        if (file.file_size()>storage.piece_size()) {
+        if (file.file_size() > storage.piece_size()) {
             piece_layers.insert_or_assign(
                     std::string(std::string_view(file.pieces_root())),
                     make_v2_piece_layers_string(file));
