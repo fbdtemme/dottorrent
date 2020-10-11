@@ -96,10 +96,16 @@ class basic_checksum : public checksum
 public:
     using storage_type = T;
 
+    basic_checksum() = default;
+
     template <typename... Args>
-    requires std::is_constructible_v<storage_type, Args...>
-    explicit basic_checksum(Args... args)
+        requires (sizeof...(Args) > 0)
+    explicit basic_checksum(Args&&... args)
             : data_(std::forward<Args>(args)...)
+    { };
+
+    explicit basic_checksum(storage_type&& s)
+            : data_(std::move(s))
     { };
 
     auto algorithm() const -> hash_function override
