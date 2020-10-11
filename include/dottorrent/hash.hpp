@@ -189,27 +189,49 @@ struct hash<dottorrent::NAME##_hash> {                                          
 };                                                                              \
 }  /* namespace std */                                                          \
 
-DOTTORRENT_HASH_CLASS_TEMPLATE(md5,      128)
-DOTTORRENT_HASH_CLASS_TEMPLATE(sha1,     160)
-DOTTORRENT_HASH_CLASS_TEMPLATE(sha256,   256)
-DOTTORRENT_HASH_CLASS_TEMPLATE(sha512,   512)
-DOTTORRENT_HASH_CLASS_TEMPLATE(sha3_256, 256)
-DOTTORRENT_HASH_CLASS_TEMPLATE(sha3_512, 512)
-DOTTORRENT_HASH_CLASS_TEMPLATE(blake2s,  256)
-DOTTORRENT_HASH_CLASS_TEMPLATE(blake2b,  512)
+
+
+DOTTORRENT_HASH_CLASS_TEMPLATE(md4,        128)
+DOTTORRENT_HASH_CLASS_TEMPLATE(md5,        128)
+DOTTORRENT_HASH_CLASS_TEMPLATE(blake2b_512, 512)
+DOTTORRENT_HASH_CLASS_TEMPLATE(blake2s_256, 256)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha1,       160)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha224,     224)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha256,     256)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha384,     384)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha512,     512)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha3_224,   224)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha3_256,   256)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha3_384,   284)
+DOTTORRENT_HASH_CLASS_TEMPLATE(sha3_512,   512)
+DOTTORRENT_HASH_CLASS_TEMPLATE(shake128,   128)
+DOTTORRENT_HASH_CLASS_TEMPLATE(shake256,   256)
+DOTTORRENT_HASH_CLASS_TEMPLATE(ripemd160,  160)
+DOTTORRENT_HASH_CLASS_TEMPLATE(whirlpool,  512)
 
 
 namespace dottorrent {
 
+
 using hash_types = std::tuple<
+        md4_hash,
         md5_hash,
+        blake2b_512_hash,
+        blake2s_256_hash,
         sha1_hash,
+        sha224_hash,
         sha256_hash,
+        sha384_hash,
         sha512_hash,
+        sha3_224_hash,
         sha3_256_hash,
+        sha3_384_hash,
         sha3_512_hash,
-        blake2s_hash,
-        blake2b_hash >;
+        shake128_hash,
+        shake256_hash,
+        ripemd160_hash,
+        whirlpool_hash>;
+
 
 //============================================================================//
 // Hashers                                                                    //

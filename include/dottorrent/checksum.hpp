@@ -131,52 +131,77 @@ private:
 #define DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(NAME)                            \
 using NAME##_checksum = basic_checksum<NAME##_hash>;                        \
 
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(md5)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha1)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha256)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha512)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha3_256)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha3_512)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(blake2s)
-DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(blake2b)
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(md4);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(md5);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(blake2b_512);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(blake2s_256);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha1);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha224);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha256);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha384);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha512);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha3_224);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha3_256);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha3_384);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(sha3_512);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(shake128);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(shake256);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(ripemd160);
+DOTTORRENT_CHECKSUM_CLASS_TEMPLATE(whirlpool);
 
 
 using checksum_types = std::tuple<
+        md4_checksum,
         md5_checksum,
+        blake2b_512_checksum,
+        blake2s_256_checksum,
         sha1_checksum,
+        sha224_checksum,
         sha256_checksum,
+        sha384_checksum,
         sha512_checksum,
+        sha3_224_checksum,
         sha3_256_checksum,
+        sha3_384_checksum,
         sha3_512_checksum,
-        blake2s_checksum,
-        blake2b_checksum >;
+        shake128_checksum,
+        shake256_checksum,
+        ripemd160_checksum,
+        whirlpool_checksum>;
+
+#define DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(KEY, NAME, ...)   \
+    if (key == to_string(hash_function::NAME)) {                \
+        return std::make_unique<NAME##_checksum>(__VA_ARGS__);  \
+    }                                                               \
+
+#define DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(FN, NAME, ...)     \
+    if (FN == hash_function::NAME) {                            \
+        return std::make_unique<NAME##_checksum>(__VA_ARGS__);  \
+    }                                                           \
+
+
+
 
 /// Create a checksum from a runtime string key
 inline auto make_checksum(std::string_view key, std::span<const std::byte> value) -> std::unique_ptr<checksum>
 {
-    if (key == to_string(hash_function::md5))
-        return std::make_unique<md5_checksum>(value);
-
-    if (key == to_string(hash_function::sha1))
-        return std::make_unique<sha1_checksum>(value);
-
-    if (key == to_string(hash_function::sha256))
-        return std::make_unique<sha256_checksum>(value);
-
-    if (key == to_string(hash_function::sha512))
-        return std::make_unique<sha512_checksum>(value);
-
-    if (key == to_string(hash_function::sha3_256))
-        return std::make_unique<sha3_256_checksum>(value);
-
-    if (key == to_string(hash_function::sha3_512))
-        return std::make_unique<sha3_512_checksum>(value);
-
-    if (key == to_string(hash_function::blake2s))
-        return std::make_unique<blake2s_checksum>(value);
-
-    if (key == to_string(hash_function::blake2b))
-        return std::make_unique<blake2b_checksum>(value);
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, md4,        value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, md5,        value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, blake2b_512, value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, blake2s_256, value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha1,       value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha224,     value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha256,     value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha384,     value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha512,     value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_224,   value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_256,   value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_384,   value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_512,   value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, shake128,   value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, shake256,   value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, ripemd160,  value)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, whirlpool,  value)
 
     return std::make_unique<generic_checksum>(key, value);
 }
@@ -184,62 +209,75 @@ inline auto make_checksum(std::string_view key, std::span<const std::byte> value
 /// Create a checksum from a runtime string key
 inline auto make_checksum(std::string_view key) -> std::unique_ptr<checksum>
 {
-    if (key == to_string(hash_function::md5))
-        return std::make_unique<md5_checksum>();
-
-    if (key == to_string(hash_function::sha1))
-        return std::make_unique<sha1_checksum>();
-
-    if (key == to_string(hash_function::sha256))
-        return std::make_unique<sha256_checksum>();
-
-    if (key == to_string(hash_function::sha512))
-        return std::make_unique<sha512_checksum>();
-
-    if (key == to_string(hash_function::sha3_256))
-        return std::make_unique<sha3_256_checksum>();
-
-    if (key == to_string(hash_function::sha3_512))
-        return std::make_unique<sha3_512_checksum>();
-
-    if (key == to_string(hash_function::blake2s))
-        return std::make_unique<blake2s_checksum>();
-
-    if (key == to_string(hash_function::blake2b))
-        return std::make_unique<blake2b_checksum>();
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, md4)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, md5)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, blake2b_512)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, blake2s_256)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha1)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha224)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha256)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha384)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha512)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_224)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_256)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_384)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, sha3_512)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, shake128)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, shake256)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, ripemd160)
+    DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE(key, whirlpool)
 
     return std::make_unique<generic_checksum>(key);
 }
 
-inline auto make_checksum(hash_function f) -> std::unique_ptr<checksum>
-{
-    switch (f) {
-        case hash_function::md5:      return std::make_unique<md5_checksum>();
-        case hash_function::sha1:     return std::make_unique<sha1_checksum>();
-        case hash_function::sha256:   return std::make_unique<sha256_checksum>();
-        case hash_function::sha512:   return std::make_unique<sha512_checksum>();
-        case hash_function::sha3_256: return std::make_unique<sha3_256_checksum>();
-        case hash_function::sha3_512: return std::make_unique<sha3_512_checksum>();
-        case hash_function::blake2s:  return std::make_unique<blake2s_checksum>();
-        case hash_function::blake2b:  return std::make_unique<blake2b_checksum>();
-        default: throw std::invalid_argument("invalid hash function");
-    }
-}
+#undef DOTTORRENT_MAKE_CHECKSUM_KEY_TEMPLATE
 
 inline auto make_checksum(hash_function f, std::span<const std::byte> value) -> std::unique_ptr<checksum>
 {
-    switch (f) {
-    case hash_function::md5:      return std::make_unique<md5_checksum>(value);
-    case hash_function::sha1:     return std::make_unique<sha1_checksum>(value);
-    case hash_function::sha256:   return std::make_unique<sha256_checksum>(value);
-    case hash_function::sha512:   return std::make_unique<sha512_checksum>(value);
-    case hash_function::sha3_256: return std::make_unique<sha3_256_checksum>(value);
-    case hash_function::sha3_512: return std::make_unique<sha3_512_checksum>(value);
-    case hash_function::blake2s:  return std::make_unique<blake2s_checksum>(value);
-    case hash_function::blake2b:  return std::make_unique<blake2b_checksum>(value);
-    default: throw std::invalid_argument("invalid hash function");
-    }
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, md4,        value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, md5,        value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, blake2b_512, value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, blake2s_256, value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha1,       value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha224,     value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha256,     value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha384,     value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha512,     value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_224,   value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_256,   value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_384,   value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_512,   value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, shake128,   value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, shake256,   value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, ripemd160,  value)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, whirlpool,  value)
+
+    throw std::invalid_argument("invalid hash function");
 }
+
+inline auto make_checksum(hash_function f) -> std::unique_ptr<checksum>
+{
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, md4)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, md5)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, blake2b_512)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, blake2s_256)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha1)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha224)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha256)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha384)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha512)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_224)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_256)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_384)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, sha3_512)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, shake128)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, shake256)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, ripemd160)
+    DOTTORRENT_MAKE_CHECKSUM_FN_TEMPLATE(f, whirlpool)
+
+    throw std::invalid_argument("invalid hash function");
+}
+
 
 inline std::unique_ptr<checksum> make_checksum(std::string_view key, std::string_view value)
 {
@@ -268,8 +306,7 @@ inline std::unique_ptr<checksum> make_checksum_from_hex(hash_function key, std::
     std::vector<std::byte> data {};
     detail::parse_hexdigest_to(std::back_inserter(data), hex_string);
     if (data.size() != hex_string.size() / 2)
-        throw std::invalid_argument(
-                "invalid digest: contains non-hexadecimal characters");
+        throw std::invalid_argument("invalid digest: contains non-hexadecimal characters");
 
     return make_checksum(key, std::move(data));
 }
