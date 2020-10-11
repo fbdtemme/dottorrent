@@ -129,7 +129,7 @@ public:
         }
 
 
-        if (v1_verifier_) v2_verifier_->start();
+        if (v1_verifier_) v1_verifier_->start();
         if (v2_verifier_) v2_verifier_->start();
 
         reader_->start();
