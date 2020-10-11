@@ -14,6 +14,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <unordered_set>
 
 #include <gsl/gsl>
 #include <tbb/concurrent_queue.h>
@@ -77,7 +78,7 @@ struct storage_hasher_options
     /// The bittorrent procol version to create a metafile for.
     protocol protocol_version = protocol::v1;
     /// The per file checksums to include in the file list.
-    checksum_options checksums = checksum_options::none;
+    std::unordered_set<hash_function> checksums = {};
     /// The minimum size of a block to read from disk.
     /// For piece sizes smaller than the min_chunk_size multiple pieces
     /// will be read in a single block for faster disk I/O.
@@ -148,7 +149,7 @@ public:
 private:
     std::reference_wrapper<file_storage> storage_;
     protocol protocol_;
-    checksum_options checksums_;
+    std::unordered_set<hash_function> checksums_;
     memory_options memory_;
     std::size_t threads_;
 

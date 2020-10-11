@@ -51,22 +51,14 @@ void storage_hasher::start() {
         reader_ = std::make_unique<v2_chunk_reader>(storage_, chunk_size, memory_.max_memory);
     }
 
-    if ((checksums_ & checksum_options::sha1) == checksum_options::sha1) {
-        checksum_hashers_.emplace_back(
-                std::make_unique<checksum_hasher>(hash_function::sha1, storage_));
-    }
-    if ((checksums_ & checksum_options::sha256) == checksum_options::sha256) {
-        checksum_hashers_.emplace_back(
-                std::make_unique<checksum_hasher>(hash_function::sha256, storage_));
-    }
-    if ((checksums_ & checksum_options::md5) == checksum_options::md5) {
-        checksum_hashers_.emplace_back(
-                std::make_unique<checksum_hasher>(hash_function::md5, storage_));
-    }
+    // add file checksums hashers and register them with the reader
 
-    for (auto& h : checksum_hashers_) {
+    for (auto algo : checksums_) {
+        auto& h = checksum_hashers_.emplace_back(std::make_unique<checksum_hasher>(algo, storage_));
         reader_->register_checksum_queue(h->get_queue());
     }
+
+    // add piece hashers and register them with the reader
 
     if (protocol_ == protocol::v1) {
         v1_hasher_ = std::make_unique<v1_chunk_hasher>(storage_, threads_);
@@ -78,11 +70,15 @@ void storage_hasher::start() {
         reader_->register_hash_queue(v2_hasher_->get_queue());
     }
 
+    // start all parts
 
-    if (v1_hasher_) v1_hasher_->start();
-    if (v2_hasher_) v2_hasher_->start();
-    for (auto& ch : checksum_hashers_) { ch->start(); }
-
+    if (v1_hasher_)
+        v1_hasher_->start();
+    if (v2_hasher_)
+        v2_hasher_->start();
+    for (auto& ch : checksum_hashers_) {
+        ch->start();
+    }
     reader_->start();
     started_ = true;
 }
