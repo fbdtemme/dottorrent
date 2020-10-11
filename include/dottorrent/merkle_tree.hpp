@@ -3,8 +3,8 @@
 #include <gsl/gsl>
 #include <tbb/concurrent_vector.h>
 #include "dottorrent/hash.hpp"
-#include "dottorrent/hash_traits.hpp"
-
+#include "dottorrent/hash_function_traits.hpp"
+#include "dottorrent/hasher/factory.hpp"
 
 namespace dottorrent {
 
@@ -17,12 +17,11 @@ struct merkle_node_position
 };
 
 
-template <hash_type T>
+template <hash_function FN>
 class merkle_tree
 {
 public:
-    using value_type = T;
-    using hasher_type = typename hash_function_traits<T::algorithm>::hasher_type;
+    using value_type = typename hash_function_traits<FN>::hash_type;
     using flat_index = std::size_t;
     using node_position = merkle_node_position;
 
@@ -82,14 +81,16 @@ public:
     }
 
     /// Calculate the root and inner hashes from the leaf hashes.
-    void update(hasher_type& hasher)
+    void update(hasher& hasher)
     {
-
         for (std::size_t layer = tree_height(); layer > 0; --layer) {
             for (std::size_t i = 0; i < nodes_in_layer(layer); ++i) {
                 hasher.update(get_node(layer, i));
                 hasher.update(get_node(layer, ++i));
-                set_node(layer-1, parent(i), hasher.finalize());
+
+                value_type hash {};
+                hasher.finalize_to(hash);
+                set_node(layer-1, parent(i), hash);
             }
         }
     }
@@ -97,8 +98,8 @@ public:
     /// Calculate the root and inner hashes from the leaf hashes.
     void update()
     {
-        hasher_type h{};
-        update(h);
+        auto hasher = make_hasher(FN);
+        update(*hasher);
     }
 
     /// Return the merkle root.

@@ -15,7 +15,7 @@ TEST_CASE("Test merkle tree")
 
     constexpr std::size_t piece_count = 10;
     // Test tree for 10 pieces
-    auto tree = merkle_tree<sha256_hash>{piece_count};
+    auto tree = merkle_tree<hash_function::sha256>{piece_count};
 
     SECTION("Construction") {
         // Verify the tree is complete
@@ -31,16 +31,22 @@ TEST_CASE("Test merkle tree")
         CHECK(tree.leaf_count() == 16);
     }
 
-    constexpr std::array pieces_data = {
+    constexpr std::array<std::string_view, 10> pieces_data = {
             "aasc", "asasd", "igrrg", "dqw",
             "pf93", "92123f", "339jr", "q0vn4g",
             "d-2hg", "jkloklew"
     };
 
     SECTION("Add leave pieces") {
+        auto hasher = make_hasher(hash_function::sha256);
+
         for (std::size_t i = 0; i < piece_count; ++i) {
-            tree.set_leaf(i, make_sha256_hash(pieces_data[i]));
+            sha256_hash h {};
+            hasher->update(pieces_data[i]);
+            hasher->finalize_to(h);
+            tree.set_leaf(i, h);
         }
+
         for (std::size_t i = 0; i < piece_count; ++i) {
             CHECK(tree.get_leaf(i) != sha256_hash{});
         }
