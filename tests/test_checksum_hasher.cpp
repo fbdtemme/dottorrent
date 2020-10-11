@@ -12,7 +12,6 @@
 #include <dottorrent/storage_hasher.hpp>
 #include <dottorrent/file_storage.hpp>
 #include <dottorrent/file_entry.hpp>
-#include <dottorrent/checksum_options.hpp>
 
 namespace dt = dottorrent;
 namespace fs = std::filesystem;

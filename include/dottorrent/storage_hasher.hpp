@@ -33,7 +33,6 @@
 
 #include "dottorrent/hash.hpp"
 #include "dottorrent/checksum.hpp"
-#include "dottorrent/checksum_options.hpp"
 #include "dottorrent/checksum_hasher.hpp"
 
 
