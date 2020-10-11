@@ -4,7 +4,7 @@ namespace dottorrent {
 
 v1_chunk_verifier::v1_chunk_verifier(file_storage& storage, std::size_t thread_count)
         : base(storage, thread_count)
-        , piece_map_(storage.piece_count())
+        , piece_map_(storage.pieces().size())
 {}
 
 void v1_chunk_verifier::process_piece_hash(

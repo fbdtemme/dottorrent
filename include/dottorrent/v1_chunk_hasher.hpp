@@ -8,18 +8,20 @@
 
 namespace dottorrent {
 
-class v1_chunk_hasher : public chunk_hasher<sha1_hasher>
+class v1_chunk_hasher : public chunk_hasher
 {
 public:
-    using base_type = chunk_hasher<sha1_hasher>;
-    using base_type::base_type;
+    using hash_type = sha1_hash;
+
+    v1_chunk_hasher(file_storage& storage, std::size_t thread_count);
 
 protected:
-    void hash_chunk(hasher_type& hasher, const data_chunk& chunk) override;
+
+    void hash_chunk(hasher& hasher, const data_chunk& chunk) override;
 
     virtual void process_piece_hash(std::size_t piece_idx,
                                     std::size_t file_idx,
-                                    const hash_type& piece_hash);
+                                    const sha1_hash& piece_hash);
 };
 
 }

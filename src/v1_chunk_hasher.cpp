@@ -2,8 +2,13 @@
 
 namespace dottorrent
 {
+v1_chunk_hasher::v1_chunk_hasher(file_storage& storage, std::size_t thread_count)
+        : chunk_hasher(storage, thread_count)
+{
+    hasher_ = make_hasher(hash_function::sha1);
+}
 
-void v1_chunk_hasher::hash_chunk(sha1_hasher& hasher, const data_chunk& chunk)
+void v1_chunk_hasher::hash_chunk(hasher& hasher, const data_chunk& chunk)
 {
     file_storage& storage = storage_;
     std::size_t piece_size = storage.piece_size();
@@ -18,20 +23,25 @@ void v1_chunk_hasher::hash_chunk(sha1_hasher& hasher, const data_chunk& chunk)
     const auto pieces_in_chunk = (chunk.data->size() + piece_size-1) / piece_size;
     auto data = std::span(*chunk.data);
 
+    sha1_hash piece_hash{};
+
     if (pieces_in_chunk == 1) {
         hasher.update(data);
-        process_piece_hash(chunk.piece_index, chunk.file_index, hasher.finalize());
+        hasher.finalize_to(piece_hash);
+        process_piece_hash(chunk.piece_index, chunk.file_index, piece_hash);
     }
     else {
         std::size_t piece_offset = 0;
         for (; piece_offset < pieces_in_chunk - 1; ++piece_offset) {
             hasher.update(data.subspan(piece_size * piece_offset, piece_size));
-            process_piece_hash(chunk.piece_index + piece_offset, chunk.file_index, hasher.finalize());
+            hasher.finalize_to(piece_hash);
+            process_piece_hash(chunk.piece_index + piece_offset, chunk.file_index, piece_hash);
         }
 
         // last piece of a chunk can be smaller than the full piece_size
         hasher.update(data.subspan(piece_offset * piece_size));
-        process_piece_hash(chunk.piece_index + piece_offset, chunk.file_index, hasher.finalize());
+        hasher.finalize_to(piece_hash);
+        process_piece_hash(chunk.piece_index + piece_offset, chunk.file_index, piece_hash);
     }
 
     bytes_hashed_.fetch_add(chunk.data->size(), std::memory_order_relaxed);
@@ -46,4 +56,5 @@ void v1_chunk_hasher::process_piece_hash(
     storage.set_piece_hash(piece_idx, piece_hash);
     pieces_done_.fetch_add(1, std::memory_order_relaxed);
 }
+
 }

@@ -11,21 +11,21 @@
 
 namespace dottorrent {
 
-class v2_chunk_hasher : public chunk_hasher<sha256_hasher>
+class v2_chunk_hasher : public chunk_hasher
 {
 public:
-    using base_type = chunk_hasher<sha256_hasher>;
+    using base_type = chunk_hasher;
 
 
     explicit v2_chunk_hasher(file_storage& storage, std::size_t thread_count = 1);
 
 protected:
-    void hash_chunk(hasher_type& hasher, const data_chunk& chunk) final;
+    void hash_chunk(hasher& hasher, const data_chunk& chunk) final;
 
-    void set_piece_layers_and_root(hasher_type& hasher, std::size_t file_index);
+    void set_piece_layers_and_root(hasher& hasher, std::size_t file_index);
 
 private:
-    std::vector<merkle_tree<sha256_hash>> merkle_trees_;
+    std::vector<merkle_tree<hash_function::sha256>> merkle_trees_;
     /// Vector with the count of hashed bytes per file.per
     std::vector<std::atomic<std::size_t>> file_bytes_hashed_ {};
     std::size_t piece_size_;

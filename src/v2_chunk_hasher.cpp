@@ -27,9 +27,10 @@ v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, std::size_t thread_count
         }
     }
     file_bytes_hashed_ = decltype(file_bytes_hashed_)(file_count);
+    hasher_ = make_hasher(hash_function::sha256);
 }
 
-void v2_chunk_hasher::hash_chunk(sha256_hasher& hasher, const data_chunk& chunk) {
+void v2_chunk_hasher::hash_chunk(hasher& hasher, const data_chunk& chunk) {
     file_storage& storage = storage_.get();
 
     Expects(chunk.file_index < storage.file_count());
@@ -52,15 +53,19 @@ void v2_chunk_hasher::hash_chunk(sha256_hasher& hasher, const data_chunk& chunk)
 
     std::size_t i = 0;
     for ( ; i < blocks_in_chunk-1; ++i) {
+        sha256_hash leaf {};
         hasher.update(data.subspan(i * v2_block_size, v2_block_size));
-        tree.set_leaf(index_offset + i, hasher.finalize());
+        hasher.finalize_to(leaf);
+        tree.set_leaf(index_offset + i, leaf);
+
         pieces_done_.fetch_add(1, std::memory_order_relaxed);
     }
 
     // last block can be smaller then the block size!
+    sha256_hash leaf {};
     hasher.update(data.subspan(i * v2_block_size));
-    tree.set_leaf(index_offset + i, hasher.finalize());
-
+    hasher.finalize_to(leaf);
+    tree.set_leaf(index_offset + i, leaf);
     bytes_hashed_.fetch_add(chunk.data->size(), std::memory_order_relaxed);
 
     // Update per file progress and check if this thread did just finish the last chunk of
@@ -72,7 +77,7 @@ void v2_chunk_hasher::hash_chunk(sha256_hasher& hasher, const data_chunk& chunk)
     }
 }
 
-void v2_chunk_hasher::set_piece_layers_and_root(sha256_hasher& hasher, std::size_t file_index) {
+void v2_chunk_hasher::set_piece_layers_and_root(hasher& hasher, std::size_t file_index) {
     Ensures(piece_size_ >= v2_block_size);
     Ensures(piece_size_ % v2_block_size == 0);
 

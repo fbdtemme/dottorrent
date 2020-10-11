@@ -2,31 +2,49 @@
 
 #include <memory>
 
-#include "dottorrent/hasher/base.hpp"
-#include "dottorrent/hasher/md5.hpp"
-#include "dottorrent/hasher/sha1.hpp"
-#include "dottorrent/hasher/sha256.hpp"
-#include "dottorrent/hasher/sha512.hpp"
+#include "dottorrent/hash_function_traits.hpp"
+#include "dottorrent/hasher/hasher.hpp"
+
+#ifdef DOTTORRENT_USE_OPENSSL
+#include "dottorrent/hasher/openssl_hasher.hpp"
+#endif
+
+#ifdef DOTTORRENT_USE_GCRYPT
+#include "dottorrent/hasher/gcrypt_hasher.hpp"
+#endif
 
 
 namespace dottorrent {
 
-
 /// Return a polymorphic hasher for given algorithm
 inline std::unique_ptr<hasher> make_hasher(hash_function f)
 {
-    switch (f) {
-    case hash_function::md5:      return std::make_unique<md5_hasher>();
-    case hash_function::sha1:     return std::make_unique<sha1_hasher>();
-    case hash_function::sha256:   return std::make_unique<sha256_hasher>();
-    case hash_function::sha512:   return std::make_unique<sha512_hasher>();
-//    case hash_function::sha3_256: return std::make_unique<sha3_256_hasher>();
-//    case hash_function::sha3_512: return std::make_unique<sha3_512_hasher>();
-//    case hash_function::blake2s:  return std::make_unique<blake2s_hasher>();
-//    case hash_function::blake2b:  return std::make_unique<blake2b_hasher>();
-    default:
-        throw std::invalid_argument("invalid hash_function");
-    }
+#ifdef DOTTORRENT_USE_OPENSSL
+    return std::make_unique<openssl_hasher>(f);
+#endif
+#ifdef DOTTORRENT_USE_GCRYPT
+    return std::make_unique<gcrypt_hasher>(f);
+#endif
+
+}
+
+template <hash_function F>
+inline typename hash_function_traits<F>::hash_type
+make_hash(std::span<const std::byte> data)
+{
+    using hash_t = typename hash_function_traits<F>::hash_type;
+
+#ifdef DOTTORRENT_USE_OPENSSL
+    auto hasher =  std::make_unique<openssl_hasher>(F);
+#endif
+#ifdef DOTTORRENT_USE_GCRYPT
+    auto hasher =  std::make_unique<gcrypt_hasher>(F);
+#endif
+
+    hash_t result {};
+    hasher->update(data);
+    hasher->finalize_to(result);
+    return result;
 }
 
 }
