@@ -14,8 +14,8 @@ include(GNUInstallDirs)
 
 option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
 option(DOTTORRENT_BUILD_COVERAGE   "Enable coverage flags" OFF)
-set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
-    "The cryptographic library to link agains. Options are: openssl, botan"
+set(DOTTORRENT_CRYPTO_LIB "gcrypt" CACHE STRING
+    "The cryptographic library to link agains. Options are: openssl, gcrypt"
 )
 
 # add cmake directory for Find* modules
@@ -25,10 +25,6 @@ add_library(dottorrent
         src/chunk_reader.cpp
         src/file_entry.cpp
         src/file_storage.cpp
-        src/hasher/md5.cpp
-        src/hasher/sha1.cpp
-        src/hasher/sha256.cpp
-        src/hasher/sha512.cpp
         src/metafile.cpp
         src/metafile_parsing.cpp
         src/metafile_serialization.cpp
@@ -38,7 +34,9 @@ add_library(dottorrent
         src/v1_chunk_verifier.cpp
         src/v2_chunk_reader.cpp
         src/v2_chunk_hasher.cpp
-)
+        src/hasher/backends/openssl.cpp
+        src/hasher/backends/gcrypt.cpp
+        )
 add_library(dottorrent::dottorrent ALIAS dottorrent)
 
 target_compile_features(dottorrent PUBLIC cxx_std_20)
@@ -53,12 +51,12 @@ if (${DOTTORRENT_CRYPTO_LIB} STREQUAL "openssl")
 
     message(STATUS "Using cryptographic library: OpenSSL")
 
-elseif (${DOTTORRENT_CRYPTO_LIB} STREQUAL "botan")
-    find_package(Botan2 REQUIRED)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC LIBDOTTORRENT_CRYPO_BOTAN)
-    target_link_libraries(${PROJECT_NAME} PUBLIC Botan2::Botan2)
+elseif (${DOTTORRENT_CRYPTO_LIB} STREQUAL "gcrypt" )
+    find_package(GCrypt REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PUBLIC GCrypt::GCrypt)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_GCRYPT)
 
-    message(STATUS "Using cryptographic library: Botan2")
+    message(STATUS "Using cryptographic library: GCrypt")
 
 else()
     message(FATAL_ERROR "Undefined crypto library: ${DOTTORRENT_CRYPTO_LIB}")
@@ -74,6 +72,9 @@ target_include_directories(dottorrent PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         )
+
+set(dottorrent_public_include_dir  ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME})
+
 
 target_link_libraries(dottorrent
     PUBLIC
@@ -122,16 +123,19 @@ install(FILES ${dottorrent_project_config}
         DESTINATION ${dottorrent_cmake_install_dir}
         )
 
-#install FindTBB.cmake
+# install FindTBB.cmake
 install(FILES
         cmake/Modules/FindTBB.cmake
         DESTINATION ${dottorrent_cmake_install_modules_dir})
 
-        # install targets to an export set
+# install public headers
+install(DIRECTORY ${dottorrent_public_include_dir} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# install targets to an export set
 install(TARGETS dottorrent
         EXPORT ${dottorrent_targets_export_name}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        INCLUDES      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 
 if (NOT fmt_FOUND)

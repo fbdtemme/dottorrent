@@ -12,6 +12,15 @@
 
 namespace dottorrent::detail {
 
+/// helper for static_assert
+
+template <typename... Args>
+struct always_false : std::false_type {};
+
+template <typename... Args>
+constexpr bool always_false_v = always_false<Args...>::value;
+
+
 inline constexpr std::array<char, 16> int_to_hex_table = {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         'a', 'b', 'c', 'd', 'e', 'f'

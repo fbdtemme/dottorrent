@@ -57,7 +57,7 @@ void v2_chunk_reader::run()
 
 void v2_chunk_reader::push(const data_chunk& chunk) {
     Expects(chunk.data);
-    Expects(0 <= chunk.piece_index && chunk.piece_index <storage_.get().size());
+    Expects(0 <= chunk.piece_index && chunk.piece_index < storage_.get().piece_count());
 
     // hasher queues
     for (auto& queue : hash_queues_) {

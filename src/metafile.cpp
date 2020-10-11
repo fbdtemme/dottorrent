@@ -272,6 +272,7 @@ std::string write_metafile(const metafile& m, protocol protocol_version)
 void write_metafile_to(std::ostream& os, const metafile& m, protocol protocol_version)
 {
     bencode::bvalue bv;
+
     if (protocol_version == protocol::v1) {
         bv = detail::make_bvalue_v1(m);
     }
@@ -309,13 +310,13 @@ void serialize_json_to(std::ostream& os, const metafile& m, protocol protocol_ve
 {
     bencode::events::encode_json_to to_json(std::cout);
     if (protocol_version == protocol::v1) {
-        bencode::connect(to_json, detail::make_bvalue_v1(m));
+        bc::connect(to_json, detail::make_bvalue_v1(m));
     }
     else if (protocol_version == protocol::v2) {
-        bencode::connect(to_json, detail::make_bvalue_v2(m));
+        bc::connect(to_json, detail::make_bvalue_v2(m));
     }
     else if (protocol_version == (protocol::v2 | protocol::v1)) {
-        bencode::connect(to_json, detail::make_bvalue_hybrid(m));
+        bc::connect(to_json, detail::make_bvalue_hybrid(m));
     } else {
         throw std::invalid_argument("unrecognised protocol version");
     }
@@ -339,14 +340,22 @@ void dump_file(const metafile& m, const fs::path& dst)
 sha1_hash info_hash_v1(const metafile& m)
 {
     auto s = bencode::encode(detail::make_bvalue_infodict_v1(m));
-    return make_sha1_hash(s);
+    sha1_hash hash {};
+    auto hasher = make_hasher(hash_function::sha1);
+    hasher->update({reinterpret_cast<const std::byte*>(s.data()), s.size()});
+    hasher->finalize_to(hash);
+    return hash;
 }
 
 /// Returns the v2 info hash
 sha256_hash info_hash_v2(const metafile& m)
 {
     auto s = bencode::encode(detail::make_bvalue_infodict_v2(m));
-    return make_sha256_hash(s);
+    sha256_hash hash {};
+    auto hasher = make_hasher(hash_function::sha1);
+    hasher->update({reinterpret_cast<const std::byte*>(s.data()), s.size()});
+    hasher->finalize_to(hash);
+    return hash;
 }
 
 

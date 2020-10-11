@@ -58,6 +58,8 @@ public:
 
     std::optional<fs::file_time_type> last_modified_time() const noexcept;
 
+    void set_last_modified_time(fs::file_time_type time);
+
     /// Returns the optional attributes.
     std::optional<file_attributes> attributes() const noexcept;
 
@@ -85,9 +87,6 @@ public:
         }
     }
 
-//    /* mutating methods */
-//
-    void set_last_modified_time(fs::file_time_type time);
 
     bool operator==(const file_entry& rhs) const noexcept;
 

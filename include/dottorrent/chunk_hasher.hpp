@@ -16,14 +16,10 @@ namespace dottorrent {
 
 namespace rng = std::ranges;
 
-template <typename H>
-    requires std::is_base_of_v<hasher, H>
 class chunk_hasher
 {
 public:
     using chunk_type = data_chunk;
-    using hasher_type = H;
-    using hash_type = typename hasher_type::hash_type;
     using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
 
     explicit chunk_hasher(file_storage& storage, std::size_t thread_count)
@@ -122,7 +118,6 @@ public:
 protected:
     virtual void run(int thread_idx)
     {
-        hasher_type hasher {};
         data_chunk item {};
         auto stop_token = threads_[thread_idx].get_stop_token();
 
@@ -134,7 +129,7 @@ protected:
                 continue;
             }
 
-            hash_chunk(hasher, item);
+            hash_chunk(*hasher_, item);
             item.data.reset();
         }
 
@@ -145,17 +140,18 @@ protected:
                 if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
                     break;
                 }
-                hash_chunk(hasher, item);
+                hash_chunk(*hasher_, item);
             }
         }
     }
 
-    virtual void hash_chunk(hasher_type& hasher, const data_chunk& chunk) = 0;
+    virtual void hash_chunk(hasher& hasher, const data_chunk& chunk) = 0;
 
 protected:
     std::reference_wrapper<file_storage> storage_;
     std::vector<std::jthread> threads_;
     std::shared_ptr<queue_type> queue_;
+    std::unique_ptr<hasher> hasher_;
 
     std::atomic<bool> started_ = false;
     std::atomic<bool> cancelled_ = false;

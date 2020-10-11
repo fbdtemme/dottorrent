@@ -50,7 +50,6 @@ enum class file_attributes {
     executable = 2,
     hidden = 4,
     padding_file = 8,
-    any = 15
 };
 
 } // namespace dottorrent
@@ -60,8 +59,6 @@ DOTTORRENT_ENABLE_BITMASK_OPERATORS(dottorrent::file_attributes);
 DOTTORRENT_ENABLE_BITMASK_OPERATORS(dottorrent::file_options);
 
 namespace dottorrent {
-
-
 
 // terminal type representing symbol / character of any type
 template <auto v>
@@ -109,7 +106,7 @@ inline auto to_string(dottorrent::file_attributes v) -> std::string
     return to_string_generator<file_attributes_definition>(v);
 }
 
-constexpr file_attributes file_attributes_from_string(std::string_view value)
+constexpr file_attributes make_file_attributes(std::string_view value)
 {
     auto attributes = file_attributes::none;
 

@@ -67,10 +67,6 @@ void parse_announce(const T& data, metafile& m)
     }
 }
 
-
-extern template void parse_announce<>(const bc::bvalue& data, metafile& m);
-extern template void parse_announce<>(const bc::bview&  data, metafile& m);
-
 template <bc::bvalue_or_bview T>
 void parse_private(const T& data, metafile& m)
 {
@@ -94,9 +90,6 @@ void parse_private(const T& data, metafile& m)
         throw parse_error(key, e.what());
     }
 }
-
-extern template void parse_private<>(const bc::bvalue& data, metafile& m);
-extern template void parse_private<>(const bc::bview&  data, metafile& m);
 
 template <bc::bvalue_or_bview T>
 void parse_comment(const T& data, metafile& m)
@@ -311,7 +304,7 @@ fs::path parse_path(const T& data)
     fs::path p{};
     auto& blist = get_list(data);
     for (auto& path_component : blist) {
-        p /= bencode::get_as<std::string_view>(path_component);
+        p /= bc::get_as<std::string_view>(path_component);
     }
     return p;
 }
@@ -326,17 +319,8 @@ std::optional<file_attributes> parse_file_attributes(const T& data)
     std::optional<file_attributes> attributes = std::nullopt;
 
     if (auto it = file_dict.find("attr"); it != std::end(file_dict)) {
-        attributes = file_attributes::none;
         const auto desc = get_string(it->second);
-        for (char c : desc) {
-            switch (c) {
-            case 'l': *attributes |= file_attributes::symlink;      break;
-            case 'x': *attributes |= file_attributes::executable;   break;
-            case 'h': *attributes |= file_attributes::hidden;       break;
-            case 'p': *attributes |= file_attributes::padding_file; break;
-            default: break;
-            }
-        }
+        attributes = make_file_attributes(desc);
     }
 
     return attributes;
@@ -669,7 +653,6 @@ bool check_if_hybrid(const T& data)
 template void parse_announce<>(const bc::bvalue& data, metafile& m);
 template void parse_announce<>(const bc::bview& data, metafile& m);
 
-
 template void parse_private<>(const bc::bvalue& data, metafile& m);
 template void parse_private<>(const bc::bview& data, metafile& m);
 
@@ -780,8 +763,7 @@ metafile parse_metafile(const T& data)
         detail::parse_piece_layers_v2(data, m);
         detail::parse_source(data, m);
 
-        auto is_hybrid = detail::check_if_hybrid(data);
-        if (is_hybrid) {
+        if (detail::check_if_hybrid(data)) {
             detail::parse_pieces_v1(data, m);
         }
 

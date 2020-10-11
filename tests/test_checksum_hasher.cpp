@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 namespace rng = std::ranges;
 
 
-TEST_CASE("per file checksum hasher")
+TEST_CASE("per file checksum hasher - sha1")
 {
     auto path = fs::path(TEST_DIR"/resources/torrent1");
     auto m = dt::metafile{};
@@ -28,7 +28,7 @@ TEST_CASE("per file checksum hasher")
     s.set_root_directory(path);
     s.add_files(fs::directory_iterator(path), fs::directory_iterator());
 
-    dt::storage_hasher hasher(s, {.checksums = dt::checksum_options::sha1});
+    dt::storage_hasher hasher(s, {.checksums = {dt::hash_function::sha1}});
     hasher.start();
     hasher.wait();
 

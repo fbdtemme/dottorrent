@@ -13,7 +13,7 @@
 
 #include "dottorrent/file_storage.hpp"
 #include "dottorrent/data_chunk.hpp"
-#include "dottorrent/hash_traits.hpp"
+#include "dottorrent/hash_function_traits.hpp"
 #include "dottorrent/chunk_hasher.hpp"
 #include "dottorrent/hasher/factory.hpp"
 
@@ -33,6 +33,7 @@ public:
             : storage_(storage)
             , queue_(std::make_shared<queue_type>())
             , hash_function_(f)
+            , hasher_(make_hasher(f))
     {};
 
     /// Start the worker threads
@@ -115,13 +116,11 @@ private:
         auto stop_token = thread_.get_stop_token();
 
         // Process tasks until stopped is set
-        while (!stop_token.stop_requested()) {
+        while (!stop_token.stop_requested() && stop_token.stop_possible()) {
             queue_->pop(item);
             // check if the data_chunk is valid or a stop wake up signal chunk
-            if (item.data == nullptr) {
-                if (stop_token.stop_requested() || !stop_token.stop_possible()) {
-                    break;
-                }
+            // check if the data_chunk is valid or a stop wake-up signal
+            if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
                 continue;
             }
 
@@ -133,8 +132,10 @@ private:
         // otherwise discard all remaining work
         if (!cancelled_.load(std::memory_order_relaxed)) {
             while (queue_->try_pop(item)) {
-                if (item.data == nullptr) continue;
-                hash_chunk(*hasher, item);
+                if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
+                    break;
+                }
+                hash_chunk(*hasher_, item);
             }
         }
     }
@@ -183,6 +184,7 @@ private:
     std::shared_ptr<queue_type> queue_;
     std::jthread thread_;
     hash_function hash_function_;
+    std::unique_ptr<hasher> hasher_;
 
     std::atomic<std::size_t> bytes_hashed_;
     std::atomic<bool> started_ = false;

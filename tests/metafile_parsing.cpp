@@ -255,7 +255,6 @@ TEST_CASE("parse v2 piece layers")
             auto& storage = m.storage();
             const auto& file = storage.at(0);
             CHECK(file.has_v2_data());
-            CHECK(file.piece_layer().size() == 6);
         }
         SECTION("bview") {
             dottorrent::detail::parse_file_tree_v2(v2_torrent.bvalue, m);
@@ -265,7 +264,6 @@ TEST_CASE("parse v2 piece layers")
             auto& storage = m.storage();
             const auto& file = storage.at(0);
             CHECK(file.has_v2_data());
-            CHECK(file.piece_layer().size() == 6);
         }
     }
 }

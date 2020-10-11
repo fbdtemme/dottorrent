@@ -158,11 +158,57 @@ file_storage::const_reverse_iterator file_storage::rbegin() const noexcept
 file_storage::const_reverse_iterator file_storage::rend() const noexcept
 { return files_.rend(); }
 
+file_storage::const_iterator file_storage::cbegin() const noexcept
+{ return files_.cbegin(); }
+
+file_storage::const_iterator file_storage::cend() const noexcept
+{ return files_.cend(); }
+
+file_storage::const_reverse_iterator file_storage::crbegin() const noexcept
+{ return files_.crbegin(); }
+
+file_storage::const_reverse_iterator file_storage::crend() const noexcept
+{ return files_.crend(); }
+
 bool file_storage::operator==(const file_storage& other) const {
     return (
             (root_directory_ == other.root_directory_) &&
                     (files_ == other.files_) &&
                     (piece_size_ == other.piece_size_) );
+}
+
+std::span<const sha1_hash> file_storage::get_piece_hash_range(std::size_t file_index) const
+{
+    Expects(file_index < file_count());
+
+    const auto& entry = at(file_index);
+
+    std::size_t cumulative_size = 0;
+    std::for_each(files_.begin(), std::next(files_.begin(), file_index),
+            [&](const file_entry& e) {
+                return cumulative_size + e.file_size();
+            });
+
+    auto offset = cumulative_size / piece_size_;
+    auto count = (entry.file_size() + piece_size_ - 1) / piece_size_;
+    return std::span(pieces_).subspan(offset, count);
+}
+
+void file_storage::set_piece_hash(std::size_t index, const sha1_hash& hash)
+{
+    Expects(index < piece_count());
+    Expects(index < pieces_.size());
+    pieces_[index] = hash;
+}
+
+std::span<const sha1_hash> file_storage::pieces() const noexcept
+{
+    return std::span(pieces_.data(), pieces_.size());
+}
+
+std::size_t file_storage::size() const noexcept
+{
+    return files_.size();
 }
 
 auto choose_piece_size(file_storage& storage) -> std::size_t

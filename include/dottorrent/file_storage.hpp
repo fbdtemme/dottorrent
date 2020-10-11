@@ -17,6 +17,7 @@
 #include "dottorrent/file_entry.hpp"
 #include "dottorrent/hash.hpp"
 #include "dottorrent/literals.hpp"
+#include "dottorrent/hash_function.hpp"
 #include "dottorrent/merkle_tree.hpp"
 
 namespace dottorrent {
@@ -27,6 +28,13 @@ using namespace dottorrent::literals;
 /// Container storing information about the files of a torrent.
 class file_storage
 {
+    using value_type = file_entry;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
     using iterator = typename std::vector<file_entry>::iterator;
     using reverse_iterator = typename std::vector<file_entry>::reverse_iterator;
     using const_iterator = typename std::vector<file_entry>::const_iterator;
@@ -62,32 +70,31 @@ public:
     template <typename InputIterator>
     void add_files(InputIterator first, InputIterator last, file_options options = file_options::none)
     {
-        using value_type = std::remove_cvref_t<typename std::iterator_traits<InputIterator>::value_type>;
-//        static_assert(std::disjunction_v<
-//                std::is_same<value_type, fs::path>,
-//                std::is_same<value_type, file_entry>,
-//                std::is_same<value_type, fs::directory_iterator>>, "Invalid input type");
+        using T = std::remove_cvref_t<typename std::iterator_traits<InputIterator>::value_type>;
 
-        if constexpr (std::is_same_v<value_type, fs::path>) {
+        if constexpr (std::is_same_v<T, fs::path>) {
             std::for_each(first, last, [&](const fs::path& file) {
                 add_file(file, options);
             });
         }
-        if constexpr (std::is_same_v<value_type, file_entry>) {
+        else if constexpr (std::is_same_v<T, file_entry>) {
             std::for_each(first, last, [&](const file_entry& file) {
                 add_file(file);
             });
         }
-        if constexpr (std::is_same_v<value_type, fs::directory_entry>) {
+        else if constexpr (std::is_same_v<T, fs::directory_entry>) {
             std::for_each(first, last, [&](const fs::directory_entry& entry) {
                 add_file(entry.path(), options);
             });
+        }
+        else {
+            static_assert(detail::always_false_v<T>, "unrecognised iterator value type");
         }
     }
 
     void remove_file(const file_entry& entry);
 
-    void clear_files()
+    void clear()
     { files_.clear(); }
 
     const file_entry& operator[](std::size_t index) const noexcept
@@ -127,8 +134,7 @@ public:
     auto protocol() const noexcept -> protocol
     {
         bool v1 = !pieces_.empty();
-        bool v2 = rng::all_of(
-                files_, [](const file_entry& entry) { return entry.has_v2_data(); });
+        bool v2 = rng::all_of(files_, [](const file_entry& entry) { return entry.has_v2_data(); });
 
         if (v1 && v2) return protocol::v1 | protocol::v2;
         else if (v1)  return protocol::v1;
@@ -136,9 +142,10 @@ public:
         else          return protocol::none;
     }
 
-    std::size_t piece_size() const noexcept;
+    size_type piece_size() const noexcept;
 
-    std::size_t piece_count() const noexcept;
+
+    size_type piece_count() const noexcept;
 
     /// Set the piece size.
     /// This will clear the current piece hashes [v1] and piece layers [v2].
@@ -149,8 +156,7 @@ public:
     void allocate_pieces();
 
     /// Return a span of sha1_hash values with all v1 pieces.
-    std::span<const sha1_hash> pieces() const noexcept
-    { return std::span(pieces_.data(), pieces_.size()); }
+    std::span<const sha1_hash> pieces() const noexcept;
 //
 //    /// Return a span of hashes in the merkle tree corresponding with the piece size.
 //    /// Return an empty span for not yet hashed files or v1 torrents.
@@ -160,34 +166,13 @@ public:
 
     const sha1_hash& get_piece_hash(std::size_t index) const noexcept;
 
-    std::span<const sha1_hash> get_piece_hash_range(std::size_t file_index) const
-    {
-        Expects(file_index < file_count());
-
-        const auto& entry = at(file_index);
-
-        std::size_t cumulative_size = 0;
-        std::for_each(files_.begin(), std::next(files_.begin(), file_index),
-            [&](const file_entry& e) {
-                return cumulative_size + e.file_size();
-            });
-
-        auto offset = cumulative_size / piece_size_;
-        auto count = (entry.file_size() + piece_size_ - 1) / piece_size_;
-        return std::span(pieces_).subspan(offset, count);
-    }
+    std::span<const sha1_hash> get_piece_hash_range(std::size_t file_index) const;
 
     /// Set the sha1 hash for the v1 piece with `index`
     /// thread safe when called for different values of `index`.
-    void set_piece_hash(std::size_t index, const sha1_hash& hash)
-    {
-        Expects(index < piece_count());
-        Expects(index < pieces_.size());
-        pieces_[index] = hash;
-    }
+    void set_piece_hash(std::size_t index, const sha1_hash& hash);
 
     void set_last_modified_time(std::size_t index, fs::file_time_type time);
-
 
     iterator begin() noexcept;
 
@@ -204,6 +189,16 @@ public:
     const_reverse_iterator rbegin() const noexcept;
 
     const_reverse_iterator rend() const noexcept;
+
+    const_iterator cbegin() const noexcept;
+
+    const_iterator cend() const noexcept;
+
+    const_reverse_iterator crbegin() const noexcept;
+
+    const_reverse_iterator crend() const noexcept;
+
+    std::size_t size() const noexcept;
 
     bool operator==(const file_storage& other) const;
 
@@ -245,7 +240,7 @@ std::string make_v2_piece_layers_string(const file_entry& entry);
 template <typename OutputIt>
 void verify_piece_layers(const file_storage& storage, OutputIt out)
 {
-    merkle_tree<sha256_hash> tree {};
+    merkle_tree<hash_function::sha256> tree {};
 
     for (const auto& entry: storage) {
         auto layers = entry.piece_layer();
