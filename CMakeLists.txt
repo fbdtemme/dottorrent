@@ -162,8 +162,15 @@ if (NOT gsl-lite_FOUND)
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
+if (NOT expected-lite_FOUND)
+    message(STATUS "Adding expected-lite to install set")
+    install(TARGETS expected-lite
+            EXPORT ${dottorrent_targets_export_name}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
-# Install the export set to enable importing targets from the build tree
+
+# Install the export set to ena ble importing targets from the build tree
 export(EXPORT ${dottorrent_targets_export_name}
         FILE ${dottorrent_targets_file}
         NAMESPACE ${PROJECT_NAME}::)
