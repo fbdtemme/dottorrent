@@ -1,7 +1,7 @@
 #include <optional>
 #include <concepts>
-#include <gsl/gsl_assert>
 #include <queue>
+#include <gsl-lite/gsl-lite.hpp>
 
 #include "dottorrent/metafile_parsing.hpp"
 

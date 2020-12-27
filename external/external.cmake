@@ -10,17 +10,17 @@ function(log_not_found library)
     message(STATUS "Fetching dependency ${library}...")
 endfunction()
 
-find_package(Microsoft.GSL CONFIG QUIET)
-if (Microsoft.GSL_FOUND)
-    log_found(Microsoft.GSL)
+find_package(gsl-lite QUIET)
+if (gsl-lite_FOUND)
+    log_found(gsl-lite)
 else()
-    log_not_found(Microsoft.GSL)
+    log_not_found(gsl-lite)
     FetchContent_Declare(
-            Microsoft.GSL
-            GIT_REPOSITORY https://github.com/microsoft/GSL.git
+            gsl-lite
+            GIT_REPOSITORY https://github.com/gsl-lite/gsl-lite.git
             GIT_TAG        master
     )
-    FetchContent_MakeAvailable(Microsoft.GSL)
+    FetchContent_MakeAvailable(gsl-lite)
 endif()
 
 find_package(fmt QUIET)

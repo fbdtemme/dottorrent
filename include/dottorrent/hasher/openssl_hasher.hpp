@@ -15,8 +15,8 @@ constexpr openssl::message_digest_algorithm get_openssl_algorithm(hash_function 
     switch (function) {
     case hash_function::md4:          return message_digest_algorithm::md4;
     case hash_function::md5:          return message_digest_algorithm::md5;
-    case hash_function::blake2b_512:   return message_digest_algorithm::blake2b512;
-    case hash_function::blake2s_256:   return message_digest_algorithm::blake2s256;
+    case hash_function::blake2b_512:  return message_digest_algorithm::blake2b512;
+    case hash_function::blake2s_256:  return message_digest_algorithm::blake2s256;
     case hash_function::sha1:         return message_digest_algorithm::sha1;
     case hash_function::sha224:       return message_digest_algorithm::sha224;
     case hash_function::sha256:       return message_digest_algorithm::sha256;

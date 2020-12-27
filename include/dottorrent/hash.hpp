@@ -9,7 +9,7 @@
 #include <string_view>
 #include <span>
 
-#include <gsl/gsl_assert>
+#include <gsl-lite/gsl-lite.hpp>
 #include <nonstd/expected.hpp>
 
 #include "dottorrent/utils.hpp"

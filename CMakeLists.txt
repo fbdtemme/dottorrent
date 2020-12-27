@@ -78,12 +78,12 @@ set(dottorrent_public_include_dir  ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT
 
 target_link_libraries(dottorrent
     PUBLIC
-        Microsoft.GSL::GSL
         bencode::bencode
         TBB::tbb
         Threads::Threads
         fmt::fmt
-    )
+        gsl::gsl-lite-v1
+        )
 
 if (DOTTORRENT_BUILD_COVERAGE)
     message(STATUS "Building with coverage enabled")
@@ -148,16 +148,16 @@ if (NOT fmt_FOUND)
 
 endif()
 
-if (NOT Microsoft.GSL_FOUND)
-    message(STATUS "Adding Microsoft.GSL to install set")
-    install(TARGETS GSL
+if (NOT bencode_FOUND)
+    message(STATUS "Adding bencode to install set")
+    install(TARGETS bencode
             EXPORT ${dottorrent_targets_export_name}
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-if (NOT bencode_FOUND)
-    message(STATUS "Adding bencode to install set")
-    install(TARGETS bencode
+if (NOT gsl-lite_FOUND)
+    message(STATUS "Adding gsl-lite to install set")
+    install(TARGETS gsl-lite-v1
             EXPORT ${dottorrent_targets_export_name}
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()

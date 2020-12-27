@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <tbb/concurrent_queue.h>
-#include <gsl/gsl_assert>
+#include <gsl-lite/gsl-lite.hpp>
 
 #include "dottorrent/data_chunk.hpp"
 #include "dottorrent/utils.hpp"

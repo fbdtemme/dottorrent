@@ -4,7 +4,7 @@
 #include <atomic>
 #include <thread>
 
-#include <gsl/gsl_assert>
+#include <gsl-lite/gsl-lite.hpp>
 #include <tbb/concurrent_queue.h>
 
 #include "dottorrent/hash_function.hpp"

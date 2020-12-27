@@ -41,7 +41,7 @@ public:
     /// i.e. the shared_object_pool to be default constructible if the
     /// value_type we build is default constructible.
     object_pool()
-        : pool_(std::make_shared<impl>(-1))
+            : pool_(std::make_shared<impl>(-1))
     { }
 
     explicit object_pool(size_type capacity)

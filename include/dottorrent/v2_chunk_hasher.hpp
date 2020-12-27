@@ -4,7 +4,7 @@
 #include <mutex>
 #include <atomic>
 
-#include <gsl/gsl_assert>
+#include <gsl-lite/gsl-lite.hpp>
 
 #include "dottorrent/merkle_tree.hpp"
 #include "dottorrent/chunk_hasher.hpp"
@@ -15,7 +15,6 @@ class v2_chunk_hasher : public chunk_hasher
 {
 public:
     using base_type = chunk_hasher;
-
 
     explicit v2_chunk_hasher(file_storage& storage, std::size_t thread_count = 1);
 

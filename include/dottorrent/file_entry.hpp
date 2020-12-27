@@ -9,7 +9,7 @@
 #include <mutex>
 #include <compare>
 
-#include <gsl/gsl_assert>
+#include <gsl-lite/gsl-lite.hpp>
 
 #include "dottorrent/general.hpp"
 #include "dottorrent/utils.hpp"

@@ -16,7 +16,7 @@
 #include <vector>
 #include <bit>
 
-#include <gsl/gsl_assert>
+#include <gsl-lite/gsl-lite.hpp>
 #include <tbb/concurrent_queue.h>
 
 #include <dottorrent/object_pool.hpp>
