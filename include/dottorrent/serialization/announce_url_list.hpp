@@ -14,21 +14,21 @@ constexpr void bencode_connect(
         EC& consumer,
         const dottorrent::announce_url_list& value)
 {
-    consumer.begin_list();
+    consumer.list_begin();
     if (!value.empty()) {
-        consumer.begin_list();
+        consumer.list_begin();
         int current_tier = 0;
         for (const auto& [url, tier] : value) {
             if (current_tier != tier) {
-                consumer.end_list();
-                consumer.begin_list();
+                consumer.list_end();
+                consumer.list_begin();
             }
             consumer.string(url);
             consumer.list_item();
         }
-        consumer.end_list();
+        consumer.list_end();
     }
-    consumer.end_list();
+    consumer.list_end();
 }
 
 } // namespace dottorrent

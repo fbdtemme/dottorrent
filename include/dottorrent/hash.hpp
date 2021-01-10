@@ -15,7 +15,7 @@
 #include "dottorrent/utils.hpp"
 #include "dottorrent/literals.hpp"
 #include "dottorrent/hash_function.hpp"
-
+#include "dottorrent/hex.hpp"
 
 namespace dottorrent {
 
@@ -160,7 +160,7 @@ constexpr auto make_hash_from_hex(std::string_view hex_string)
     if (hex_string.size() != T::size_hex)
         throw std::invalid_argument("invalid digest size");
 
-    auto data = detail::parse_hexdigest<T::size_bytes>(hex_string);
+    auto data = from_hexadecimal_string<T::size_bytes>(hex_string);
     if (!data)
         throw std::invalid_argument(
                 "invalid digest: contains non-hexadecimal characters");

@@ -16,7 +16,8 @@ add_executable(dottorrent-tests
         test_storage_hasher.cpp
         test_checksum_hasher.cpp
         test_storage_verifier.cpp
-        test_hashers.cpp)
+        test_hashers.cpp
+        test_hex.cpp)
 
 
 target_link_libraries(dottorrent-tests Catch2::Catch2 dottorrent)

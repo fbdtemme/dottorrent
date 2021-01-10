@@ -9,8 +9,9 @@
 #include <cmath>
 #include <numeric>
 #include <compare>
+#include <mutex>
 
-#include <gsl/gsl>
+#include <gsl-lite/gsl-lite.hpp>
 
 #include "dottorrent/general.hpp"
 #include "dottorrent/bitmask_operators.hpp"
@@ -43,11 +44,11 @@ class file_storage
 public:
     file_storage() = default;
 
-    file_storage(const file_storage& other) = default;
+    file_storage(const file_storage& other);
 
     file_storage(file_storage&&) = default;
 
-    file_storage& operator=(const file_storage& other) = default;
+    file_storage& operator=(const file_storage& other);
 
     file_storage& operator=(file_storage&&) = default;
 
@@ -57,11 +58,7 @@ public:
 
     void set_root_directory(const fs::path& root);
 
-    void add_file(const file_entry& file)
-    {
-        total_file_size_ += file.file_size();
-        files_.push_back(file);
-    }
+    void add_file(const file_entry& file);
 
     void add_file(file_entry&& file);
 
@@ -115,13 +112,13 @@ public:
     const file_entry& at(std::size_t pos) const
     { return files_.at(pos); }
 
-    auto total_file_size() const-> std::size_t
+    std::size_t total_file_size() const
     { return total_file_size_; }
 
-    auto file_count() const -> std::size_t
+    std::size_t file_count() const
     { return files_.size(); }
 
-    auto file_mode() const -> file_mode;
+    enum file_mode file_mode() const;
 
     /// Return the protocol version this storage object supports.
     ///
@@ -134,7 +131,11 @@ public:
     auto protocol() const noexcept -> protocol
     {
         bool v1 = !pieces_.empty();
-        bool v2 = rng::all_of(files_, [](const file_entry& entry) { return entry.has_v2_data(); });
+        bool v2 = rng::all_of(files_, [](const file_entry& entry) {
+            // all regular files must have v2 data, skip pad files and symlinks
+            if (entry.is_padding_file() || entry.is_symlink()) return true;
+            return entry.has_v2_data();
+        });
 
         if (v1 && v2) return protocol::v1 | protocol::v2;
         else if (v1)  return protocol::v1;
@@ -212,6 +213,7 @@ private:
     std::vector<file_entry> files_ {};
     /// v1 pieces
     std::vector<sha1_hash> pieces_ {};
+    std::mutex pieces_mutex_ {};
 };
 
 

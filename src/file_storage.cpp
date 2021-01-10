@@ -2,6 +2,26 @@
 
 namespace dottorrent {
 
+file_storage::file_storage(const file_storage& other)
+    : total_file_size_(other.total_file_size_)
+    , piece_size_(other.piece_size_)
+    , root_directory_(other.root_directory_)
+    , files_(other.files_)
+    , pieces_(other.pieces_)
+    {}
+
+file_storage& file_storage::operator=(const file_storage& other)
+{
+    if (&other == this) return *this;
+    total_file_size_ = other.total_file_size_;
+    piece_size_ = other.piece_size_;
+    root_directory_ = other.root_directory_;
+    files_ = other.files_;
+    pieces_ = other.pieces_;
+
+    return *this;
+}
+
 bool file_storage::has_root_directory() const noexcept
 {
     return !root_directory_.empty();
@@ -16,6 +36,12 @@ void file_storage::set_root_directory(const fs::path& root)
 {
     Ensures(fs::exists(root));
     root_directory_ = fs::absolute(root).lexically_normal();
+}
+
+void file_storage::add_file(const file_entry& file)
+{
+    total_file_size_ += file.file_size();
+    files_.push_back(file);
 }
 
 void file_storage::add_file(file_entry&& file)
@@ -90,45 +116,6 @@ const sha1_hash& file_storage::get_piece_hash(std::size_t index) const noexcept
     return pieces_[index];
 }
 
-//std::span<const sha256_hash> file_storage::piece_layers(std::size_t file_index) const noexcept
-//{
-//    Expects(file_index < file_count());
-//    const auto& root = files_[file_index].pieces_root();
-//    if (!root.has_value()) return {};
-//    Expects(piece_layers_.contains(*root));
-//    return std::span(piece_layers_.at(*root));
-//}
-//
-//std::span<const sha256_hash> file_storage::piece_layers(const file_entry& entry) const noexcept
-//{
-//    const auto& root = entry.pieces_root();
-//    if (!root.has_value()) return {};
-//    Expects(piece_layers_.contains(*root));
-//    return std::span(piece_layers_.at(*root));
-//}
-
-
-//void file_storage::set_piece_layer(std::size_t file_index, std::span<const sha256_hash> layer)
-//{
-//    Expects(file_index < file_count());
-//
-//    std::unique_lock lck(piece_layers_mutex_);
-//
-//    if (const auto& pr = files_[file_index].pieces_root(); pr) {
-//        piece_layers_[*pr].assign(layer.begin(), layer.end());
-//    }
-//}
-//
-//void file_storage::set_piece_layer(const file_entry& entry, std::span<const sha256_hash> layer)
-//{
-//    std::unique_lock lck(piece_layers_mutex_);
-//
-//    if (const auto& pr = entry.pieces_root(); pr) {
-//        piece_layers_[*pr].assign(layer.begin(), layer.end());
-//    }
-//}
-
-
 void file_storage::set_last_modified_time(std::size_t index, fs::file_time_type time) {
     Expects(index < file_count());
     files_[index].set_last_modified_time(time);
@@ -198,6 +185,7 @@ void file_storage::set_piece_hash(std::size_t index, const sha1_hash& hash)
 {
     Expects(index < piece_count());
     Expects(index < pieces_.size());
+    std::unique_lock lck{pieces_mutex_};
     pieces_[index] = hash;
 }
 

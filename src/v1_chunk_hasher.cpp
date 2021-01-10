@@ -3,10 +3,8 @@
 namespace dottorrent
 {
 v1_chunk_hasher::v1_chunk_hasher(file_storage& storage, std::size_t thread_count)
-        : chunk_hasher(storage, thread_count)
-{
-    hasher_ = make_hasher(hash_function::sha1);
-}
+        : chunk_hasher(storage, hash_function::sha1, thread_count)
+{}
 
 void v1_chunk_hasher::hash_chunk(hasher& hasher, const data_chunk& chunk)
 {
@@ -23,26 +21,20 @@ void v1_chunk_hasher::hash_chunk(hasher& hasher, const data_chunk& chunk)
     const auto pieces_in_chunk = (chunk.data->size() + piece_size-1) / piece_size;
     auto data = std::span(*chunk.data);
 
+    Expects(pieces_in_chunk >= 1);
     sha1_hash piece_hash{};
 
-    if (pieces_in_chunk == 1) {
-        hasher.update(data);
+    std::size_t piece_in_block_idx = 0;
+    for (; piece_in_block_idx < pieces_in_chunk - 1; ++piece_in_block_idx) {
+        hasher.update(data.subspan(piece_size * piece_in_block_idx, piece_size));
         hasher.finalize_to(piece_hash);
-        process_piece_hash(chunk.piece_index, chunk.file_index, piece_hash);
+        process_piece_hash(chunk.piece_index + piece_in_block_idx, chunk.file_index, piece_hash);
     }
-    else {
-        std::size_t piece_offset = 0;
-        for (; piece_offset < pieces_in_chunk - 1; ++piece_offset) {
-            hasher.update(data.subspan(piece_size * piece_offset, piece_size));
-            hasher.finalize_to(piece_hash);
-            process_piece_hash(chunk.piece_index + piece_offset, chunk.file_index, piece_hash);
-        }
 
-        // last piece of a chunk can be smaller than the full piece_size
-        hasher.update(data.subspan(piece_offset * piece_size));
-        hasher.finalize_to(piece_hash);
-        process_piece_hash(chunk.piece_index + piece_offset, chunk.file_index, piece_hash);
-    }
+    // last piece of a chunk can be smaller than the full piece_size
+    hasher.update(data.subspan(piece_in_block_idx * piece_size));
+    hasher.finalize_to(piece_hash);
+    process_piece_hash(chunk.piece_index + piece_in_block_idx, chunk.file_index, piece_hash);
 
     bytes_hashed_.fetch_add(chunk.data->size(), std::memory_order_relaxed);
 }

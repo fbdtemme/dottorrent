@@ -22,10 +22,11 @@ public:
     using chunk_type = data_chunk;
     using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
 
-    explicit chunk_hasher(file_storage& storage, std::size_t thread_count)
+    explicit chunk_hasher(file_storage& storage, hash_function hf, std::size_t thread_count )
             : storage_(storage)
             , threads_(thread_count)
             , queue_(std::make_shared<queue_type>())
+            , hash_function_(hf)
     { }
 
     chunk_hasher(const chunk_hasher& other) = delete;
@@ -118,6 +119,8 @@ public:
 protected:
     virtual void run(int thread_idx)
     {
+        // copy the global hasher object to a per-thread hasher
+        auto hasher = make_hasher(hash_function_);
         data_chunk item {};
         auto stop_token = threads_[thread_idx].get_stop_token();
 
@@ -129,7 +132,7 @@ protected:
                 continue;
             }
 
-            hash_chunk(*hasher_, item);
+            hash_chunk(*hasher, item);
             item.data.reset();
         }
 
@@ -140,7 +143,7 @@ protected:
                 if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
                     break;
                 }
-                hash_chunk(*hasher_, item);
+                hash_chunk(*hasher, item);
             }
         }
     }
@@ -151,7 +154,7 @@ protected:
     std::reference_wrapper<file_storage> storage_;
     std::vector<std::jthread> threads_;
     std::shared_ptr<queue_type> queue_;
-    std::unique_ptr<hasher> hasher_;
+    hash_function hash_function_;
 
     std::atomic<bool> started_ = false;
     std::atomic<bool> cancelled_ = false;

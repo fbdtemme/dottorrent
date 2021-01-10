@@ -4,9 +4,10 @@
 #include <system_error>
 #include <type_traits>
 #include <span>
+#include <gsl-lite/gsl-lite.hpp>
+#include <cstring>
 
 #include <gcrypt.h>
-#include <cstring>
 
 namespace gcrypt {
 namespace detail {
@@ -107,18 +108,26 @@ public:
 
     void update(std::span<const std::byte> data)
     {
-        ::gcry_md_write(context_, reinterpret_cast<const void*>(data.data()), data.size());
+        ::gcry_md_write(context_, data.data(), data.size());
     }
 
     void finalize_to(std::span<std::byte> digest)
     {
         const unsigned char* data = ::gcry_md_read(context_, algorithm_);
-        std::memcpy(digest.data(), data, gcry_md_get_algo_dlen(algorithm_));
+        const auto digest_size = ::gcry_md_get_algo_dlen(algorithm_);
+
+        Expects(digest.size() >= digest_size);
+        std::memcpy(digest.data(), data, digest_size);
     }
 
     void reset()
     {
-        gcry_md_reset(context_);
+        ::gcry_md_reset(context_);
+    }
+
+    ~message_digest()
+    {
+        ::gcry_md_close(context_);
     }
 
 private:

@@ -6,7 +6,7 @@
 namespace dottorrent {
 
 v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, std::size_t thread_count)
-        : base_type(storage, thread_count)
+        : base_type(storage, hash_function::sha256, thread_count)
         , piece_size_(storage.piece_size())
         , file_bytes_hashed_()
 {
@@ -27,13 +27,19 @@ v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, std::size_t thread_count
         }
     }
     file_bytes_hashed_ = decltype(file_bytes_hashed_)(file_count);
-    hasher_ = make_hasher(hash_function::sha256);
 }
 
 void v2_chunk_hasher::hash_chunk(hasher& hasher, const data_chunk& chunk) {
     file_storage& storage = storage_.get();
 
     Expects(chunk.file_index < storage.file_count());
+
+    // Piece without any data indicate a missing file.
+    // We do not upgrade bytes hashed but mark the piece as done.
+    if (chunk.data == nullptr) {
+        pieces_done_.fetch_add(1, std::memory_order_relaxed);
+        return;
+    }
 
     file_entry& entry = storage[chunk.file_index];
     auto& tree = merkle_trees_[chunk.file_index];
@@ -43,13 +49,6 @@ void v2_chunk_hasher::hash_chunk(hasher& hasher, const data_chunk& chunk) {
     // index of 16 KiB chunks in the per file merkle tree
     const auto index_offset = chunk.piece_index * piece_size_ / v2_block_size;
     const auto data = std::span(*chunk.data);
-
-    // Piece without any data indicate a missing file.
-    // We do not upgrade bytes hashed but mark the piece as done.
-    if (chunk.data == nullptr) {
-        pieces_done_.fetch_add(1, std::memory_order_relaxed);
-        return;
-    }
 
     std::size_t i = 0;
     for ( ; i < blocks_in_chunk-1; ++i) {

@@ -17,7 +17,7 @@ chunk_reader::chunk_reader(file_storage& storage, std::size_t block_size, std::s
 
 void chunk_reader::register_hash_queue(std::shared_ptr<hash_queue> q)
 {
-    hash_queues_.emplace_back(std::move(q));
+    hash_queues_.push_back(std::move(q));
 }
 
 void chunk_reader::register_checksum_queue(std::shared_ptr<checksum_queue> q)
@@ -26,13 +26,6 @@ void chunk_reader::register_checksum_queue(std::shared_ptr<checksum_queue> q)
 }
 
 void chunk_reader::start() {
-
-    // set hasher to completed and return without doying any work
-    if (!hash_queues_.empty() && !checksum_queues_.empty()) {
-        started_.store(true, std::memory_order_release);
-        return;
-    }
-
     if (started()) return;
 
     if (cancelled())

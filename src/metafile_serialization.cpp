@@ -3,6 +3,7 @@
 
 #include <bencode/encode.hpp>
 #include <bencode/bvalue.hpp>
+#include <bencode/traits/span.hpp>
 
 
 namespace dottorrent::detail {
@@ -31,11 +32,12 @@ bencode::bvalue make_bvalue_infodict_v1(const metafile& m)
             if (file.attributes()) {
                 file_info["attr"] = file.attributes().value();
             }
-
             if (file.is_symlink()) {
                 file_info["symlink path"] = file.symlink_path().value();
             }
-
+            for (const auto& [algo, checksum] : file.checksums()) {
+                file_info[algo] = checksum->value();
+            }
             bfile_list.push_back(std::move(file_info));
         }
         info.insert_or_assign("files", std::move(file_list));
@@ -46,10 +48,16 @@ bencode::bvalue make_bvalue_infodict_v1(const metafile& m)
         else {
             info.insert_or_assign("name", m.name());
         }
-
-        info.insert_or_assign("piece length", storage.piece_size());
-        info.insert_or_assign("pieces", make_v1_pieces_string(storage));
     }
+
+    info.insert_or_assign("piece length", storage.piece_size());
+    info.insert_or_assign("pieces", make_v1_pieces_string(storage));
+
+    // only add private fields if it is true to minimize size
+    if (auto is_private = m.is_private(); is_private) {
+        info.insert_or_assign("private", is_private);
+    }
+
     return binfo;
 }
 
@@ -100,12 +108,22 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
         if (file.is_symlink()) {
             file_info["symlink path"] = file.symlink_path().value();
         }
+
+        for (const auto& [algo, checksum] : file.checksums()) {
+            file_info[algo] = checksum->value();
+        }
+
         ptr->insert_or_assign("", file_info);
         // reset ptr to root of file tree
         ptr = &file_tree;
     }
 
     info.insert_or_assign("file tree", std::move(bfile_tree));
+
+    // only add private fields if it is true to minimize size
+    if (auto is_private = m.is_private(); is_private) {
+        info.insert_or_assign("private", is_private);
+    }
 
     return binfo;
 }
@@ -140,6 +158,10 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
                 file_info["symlink path"] = file.symlink_path().value();
             }
 
+            for (const auto& [algo, checksum] : file.checksums()) {
+                file_info[algo] = checksum->value();
+            }
+
             bfile_list.push_back(std::move(file_info));
         }
         info.insert_or_assign("files", std::move(file_list));
@@ -154,6 +176,7 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
         // padding files are only for v1
         if (file.is_padding_file())
             continue;
+
         for (const auto& component : file.path()) {
             if (auto it = ptr->find(component); it != ptr->end()) {
                 ptr = &get_dict(it->second);
@@ -194,6 +217,11 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
     info.insert_or_assign("pieces", make_v1_pieces_string(storage));
     info.insert_or_assign("meta version", 2);
 
+    // only add private fields if it is true to minimize size
+    if (auto is_private = m.is_private(); is_private) {
+        info.insert_or_assign("private", is_private);
+    }
+
     return binfo;
 }
 
@@ -204,14 +232,18 @@ bencode::bvalue make_bvalue_v1(const metafile& m)
     auto& btorrent = get_dict(torrent);
 
     // add first element of announce-url to announce for compatibility
-    std::string announce = (!m.trackers().empty()) ? (m.trackers()[0].url) : "";
 
-    btorrent.insert_or_assign("announce", announce);
-    btorrent.insert_or_assign("announce-url", m.trackers());
-    btorrent.insert_or_assign("comment", m.comment());
+    if (!m.trackers().empty()) {
+        btorrent.insert_or_assign("announce", m.trackers()[0].url);
+        btorrent.insert_or_assign("announce-url", m.trackers());
+    }
+
+    if (!m.comment().empty()) {
+        btorrent.insert_or_assign("comment", m.comment());
+    }
+
     btorrent.insert_or_assign("created by", m.created_by());
     btorrent.insert_or_assign("creation date", m.creation_date().count());
-    btorrent.insert_or_assign("private", m.is_private());
 
     if (!m.collections().empty()) {
         btorrent.insert_or_assign("collections", m.collections());
@@ -243,12 +275,15 @@ bencode::bvalue make_bvalue_v2(const dottorrent::metafile& m)
     auto& btorrent = get_dict(torrent);
     const auto& storage = m.storage();
 
-    // add first element of announce-url to announce for compatibility
-    std::string announce = (!m.trackers().empty()) ? (m.trackers()[0].url) : "";
+    if (!m.trackers().empty()) {
+        btorrent.insert_or_assign("announce", m.trackers()[0].url);
+        btorrent.insert_or_assign("announce-url", m.trackers());
+    }
 
-    btorrent.insert_or_assign("announce", announce);
-    btorrent.insert_or_assign("announce-url", m.trackers());
-    btorrent.insert_or_assign("comment", m.comment());
+    if (!m.comment().empty()) {
+        btorrent.insert_or_assign("comment", m.comment());
+    }
+
     btorrent.insert_or_assign("created by", m.created_by());
     btorrent.insert_or_assign("creation date", m.creation_date().count());
     btorrent.insert_or_assign("name", m.name());
@@ -283,7 +318,7 @@ bencode::bvalue make_bvalue_v2(const dottorrent::metafile& m)
 
     std::size_t f_idx = 0;
     for (const auto& file: storage) {
-        if (file.file_size()>storage.piece_size()) {
+        if (file.file_size() > storage.piece_size()) {
             piece_layers.insert_or_assign(
                     std::string(std::string_view(file.pieces_root())),
                     make_v2_piece_layers_string(file));

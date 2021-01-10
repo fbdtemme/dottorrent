@@ -68,7 +68,7 @@ else()
 endif()
 
 find_package(bencode QUIET)
-if (bencode_FOUND)
+if (bencode_FOUND OR TARGET bencode::bencode)
     log_found(bencode)
 else()
     log_not_found(bencode)

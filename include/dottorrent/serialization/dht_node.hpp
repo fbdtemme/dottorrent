@@ -13,10 +13,10 @@ constexpr void bencode_connect(
         EventConsumer& consumer,
         const dht_node& value)
 {
-    consumer.begin_list();
+    consumer.list_begin();
     consumer.string(value.url);
     consumer.integer(value.port);
-    consumer.end_list();
+    consumer.list_end();
 }
 
 } // namespace dottorrent

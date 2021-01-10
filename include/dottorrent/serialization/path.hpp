@@ -14,12 +14,12 @@ void bencode_connect(
         EC& consumer,
         const std::filesystem::path& value)
 {
-    consumer.begin_list();
+    consumer.list_begin();
     for (auto& v: value) {
         consumer.string(v.generic_string());
         consumer.list_item();
     }
-    consumer.end_list();
+    consumer.list_end();
 }
 
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gsl/gsl>
+#include <gsl-lite/gsl-lite.hpp>
 #include <tbb/concurrent_vector.h>
 #include "dottorrent/hash.hpp"
 #include "dottorrent/hash_function_traits.hpp"

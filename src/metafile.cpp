@@ -350,9 +350,17 @@ sha1_hash info_hash_v1(const metafile& m)
 /// Returns the v2 info hash
 sha256_hash info_hash_v2(const metafile& m)
 {
-    auto s = bencode::encode(detail::make_bvalue_infodict_v2(m));
+    std::string s;
+
+    const auto protocol = m.storage().protocol();
+    if (protocol == dottorrent::protocol::hybrid) {
+        s = bencode::encode(detail::make_bvalue_infodict_hybrid(m));
+    } else {
+        s = bencode::encode(detail::make_bvalue_infodict_v2(m));
+    }
+
     sha256_hash hash {};
-    auto hasher = make_hasher(hash_function::sha1);
+    auto hasher = make_hasher(hash_function::sha256);
     hasher->update({reinterpret_cast<const std::byte*>(s.data()), s.size()});
     hasher->finalize_to(hash);
     return hash;
@@ -361,7 +369,7 @@ sha256_hash info_hash_v2(const metafile& m)
 
 sha1_hash truncate_v2_hash(sha256_hash hash)
 {
-    return sha1_hash(std::span{hash.data(), 20});
+    return sha1_hash(std::span{hash.data(), sha1_hash::size_bytes});
 }
 
 } // namespace dottorrent

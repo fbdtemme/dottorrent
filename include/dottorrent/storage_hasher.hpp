@@ -16,7 +16,7 @@
 #include <vector>
 #include <unordered_set>
 
-#include <gsl/gsl>
+#include <gsl-lite/gsl-lite.hpp>
 #include <tbb/concurrent_queue.h>
 
 #include <dottorrent/object_pool.hpp>

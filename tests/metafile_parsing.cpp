@@ -27,7 +27,6 @@ struct torrent_fixture
     bencode::descriptor_table descriptors {};
     bencode::bview bview {};
     bencode::bvalue bvalue {};
-
 };
 
 static auto fedora_torrent = torrent_fixture(
@@ -38,6 +37,10 @@ static auto v2_torrent = torrent_fixture(
 
 static auto hybrid_torrent = torrent_fixture(
         TEST_DIR"/resources/bittorrent-v2-hybrid-test.torrent");
+
+static auto rsna_torrent = torrent_fixture(
+                TEST_DIR"/resources/RSNA_Pneumonia_Detection_Challenge.torrent");
+
 
 
 TEST_CASE("parse announce urls", "[metafile]")
@@ -58,6 +61,13 @@ TEST_CASE("parse announce urls", "[metafile]")
 
         CHECK_FALSE(r.empty());
         CHECK(r[0].url == "http://torrent.fedoraproject.org:6969/announce");
+    }
+
+    SECTION("rsna") {
+        dottorrent::detail::parse_announce(rsna_torrent.bview, m);
+        auto r = m.trackers();
+
+        CHECK_FALSE(r.empty());
     }
 }
 

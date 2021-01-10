@@ -22,7 +22,7 @@ struct checksum
 
     virtual auto hex_string() -> std::string
     {
-        return detail::make_hex_string(value());
+        return to_hexadecimal_string(value());
     }
 
     virtual ~checksum() noexcept = default;
@@ -292,7 +292,7 @@ inline std::unique_ptr<checksum> make_checksum(hash_function f, std::string_view
 inline std::unique_ptr<checksum> make_checksum_from_hex(std::string_view key, std::string_view hex_string)
 {
     std::vector<std::byte> data {};
-    detail::parse_hexdigest_to(std::back_inserter(data), hex_string);
+    from_hexadecimal_string(std::back_inserter(data), hex_string);
     if (data.size() != hex_string.size() / 2)
         throw std::invalid_argument(
                 "invalid digest: contains non-hexadecimal characters");
@@ -304,7 +304,7 @@ inline std::unique_ptr<checksum> make_checksum_from_hex(std::string_view key, st
 inline std::unique_ptr<checksum> make_checksum_from_hex(hash_function key, std::string_view hex_string)
 {
     std::vector<std::byte> data {};
-    detail::parse_hexdigest_to(std::back_inserter(data), hex_string);
+    from_hexadecimal_string(std::back_inserter(data), hex_string);
     if (data.size() != hex_string.size() / 2)
         throw std::invalid_argument("invalid digest: contains non-hexadecimal characters");
 

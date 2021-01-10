@@ -9,7 +9,7 @@
 #include <vector>
 
 
-#include <gsl/gsl>
+#include <gsl-lite/gsl-lite.hpp>
 #include <bencode/bencode.hpp>
 
 
@@ -31,13 +31,13 @@ struct announce_url {
 
     bool operator==(const announce_url& that) const = default;
 
-    std::weak_ordering operator<=>(const announce_url& that) const
+    std::strong_ordering operator<=>(const announce_url& that) const
     {
-        if (auto order = std::compare_weak_order_fallback(url, that.url);
-                 order != std::weak_ordering::equivalent ){
-            return order;
+        auto tier_cmp = tier <=> that.tier;
+        if (tier_cmp  == std::strong_ordering::equal) {
+            return std::compare_strong_order_fallback(url, that.url);
         }
-        return tier <=> that.tier;
+        return tier_cmp;
     };
 
     // friends for structured binding support

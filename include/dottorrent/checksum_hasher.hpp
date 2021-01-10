@@ -29,7 +29,7 @@ public:
     using chunk_type = data_chunk;
     using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
 
-    explicit checksum_hasher(hash_function f, file_storage& storage)
+    explicit checksum_hasher(file_storage& storage, hash_function f)
             : storage_(storage)
             , queue_(std::make_shared<queue_type>())
             , hash_function_(f)
@@ -69,7 +69,10 @@ public:
         // Wake up threads with a poison pill if they are blocked on pop()
         // tbb::concurrent_queue has negative size if pop() 's are pending.
         while (queue_->size() < 0) {
-            queue_->push({0, 0, nullptr});
+            queue_->push({
+                    std::numeric_limits<std::uint32_t>::max(),
+                    std::numeric_limits<std::uint32_t>::max(),
+                    nullptr});
         }
 
         if (thread_.joinable()) {
@@ -95,7 +98,7 @@ public:
     auto done() const noexcept -> bool
     { return cancelled() || (started() && !thread_.joinable()); }
 
-    auto get_queue() -> const std::shared_ptr<queue_type>&
+    std::shared_ptr<queue_type> get_queue()
     { return queue_; }
 
     /// Number of total bytes processed.
@@ -110,21 +113,18 @@ public:
 private:
     virtual void run()
     {
-        auto hasher = make_hasher(hash_function_);
-
         data_chunk item {};
         auto stop_token = thread_.get_stop_token();
 
         // Process tasks until stopped is set
         while (!stop_token.stop_requested() && stop_token.stop_possible()) {
             queue_->pop(item);
-            // check if the data_chunk is valid or a stop wake up signal chunk
             // check if the data_chunk is valid or a stop wake-up signal
             if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
                 continue;
             }
 
-            hash_chunk(*hasher, item);
+            hash_chunk(*hasher_, item);
             item.data.reset();
         }
 
@@ -142,7 +142,8 @@ private:
 
     void hash_chunk(hasher& hasher, const data_chunk& item)
     {
-        // TODO: test
+        Expects(item.data != nullptr);
+
         file_storage& storage = this->storage_;
         auto data = std::span(*item.data);
         std::size_t chunk_size = data.size();
@@ -150,7 +151,7 @@ private:
         current_file_size_ = storage[current_file_idx_].file_size();
 
         // Verify that we are receive chunks sequentially
-        Ensures(current_file_idx_ == item.file_index);
+        Ensures(current_file_idx_ <= item.file_index);
 
         while (chunk_bytes_processed < chunk_size) {
             auto curr_file_remaining = current_file_size_ - current_file_data_hashed_;
@@ -169,11 +170,8 @@ private:
                 ++current_file_idx_;
 
                 // reset file counters
-                if (current_file_size_ < storage.file_count()) {
-                    current_file_size_ = storage[current_file_idx_].file_size();
-                } else {
-                    current_file_size_ = 0;
-                }
+                Expects(current_file_idx_ < storage.file_count());
+                current_file_size_ = storage[current_file_idx_].file_size();
                 current_file_data_hashed_ = 0;
             }
         }
@@ -195,29 +193,5 @@ private:
     std::size_t current_file_size_ = 0;
     std::size_t current_file_data_hashed_ = 0;
 };
-
-//
-//using md5_checksum_hasher = basic_checksum_hasher<hash_function::md5>;
-//using sha1_checksum_hasher = basic_checksum_hasher<hash_function::sha1>;
-//using sha256_checksum_hasher = basic_checksum_hasher<hash_function::sha256>;
-
-//
-//
-//class checksum_hasher : chunk_hasher
-//{
-//    using chunk_type = data_chunk;
-//    using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
-//
-//    checksum_hasher(file_storage& storage, hash_function f)
-//            : storage_(storage)
-//    {
-//        hash_function
-//    }
-//
-//
-//    hasher_type
-//    std::reference_wrapper<file_storage> storage_;
-//    std::jthread thread_;
-//};
 
 }

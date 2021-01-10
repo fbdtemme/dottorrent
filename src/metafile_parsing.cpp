@@ -398,6 +398,7 @@ static file_entry parse_file_entry_v2(const T& data, const fs::path& path)
     std::size_t size = get_integer(length_field_it->second);
 
     auto pieces_root_it = file_dict.find("pieces root");
+
     if (pieces_root_it == file_dict.end()) {
         throw parse_error("name", "missing pieces root");
     }
@@ -422,9 +423,7 @@ static file_entry parse_file_entry_v2(const T& data, const fs::path& path)
 
         const auto& s = get_string(v);
         auto checksum = make_checksum(
-                k,
-                std::span(reinterpret_cast<const std::byte*>(s.data()), s.size())
-        );
+                k, std::span(reinterpret_cast<const std::byte*>(s.data()), s.size()));
 
         if (checksum != nullptr) {
             entry.add_checksum(std::move(checksum));
@@ -465,8 +464,8 @@ void parse_file_list_v1(const T& data, metafile& m)
     }
 }
 
-template <bc::bvalue_or_bview T>
-void parse_file_tree_v2(const T& data, metafile& m)
+template <bc::bvalue_or_bview T, std::output_iterator<file_entry> OutputIterator>
+void parse_file_tree_v2(const T& data, metafile& m, OutputIterator out)
 {
     Expects(holds_dict(data));
     const auto& dict = get_dict(data);
@@ -476,15 +475,14 @@ void parse_file_tree_v2(const T& data, metafile& m)
     const auto& info_dict = get_dict(info_view);
 
     auto& storage = m.storage();
-    constexpr auto key = "file tree";
-    const auto& file_tree = get_dict(info_dict.at(key));
+    const auto& file_tree_view = info_dict.at("file tree");
+    const auto& file_tree = get_dict(file_tree_view);
 
     using dict_type = typename T::dict_type;
     using iterator_type = typename T::dict_type::const_iterator;
     using frame_type = std::pair<std::reference_wrapper<const dict_type>, iterator_type>;
 
     // do not use recursion to be safe from stack overflow for very deep trees.
-
     std::stack<frame_type> frames {};
     // add a root to make frames and path_components equal sized.
     std::vector<std::string> path_components { "/" };
@@ -493,7 +491,7 @@ void parse_file_tree_v2(const T& data, metafile& m)
 
     while (!frames.empty()) {
         auto& frame = frames.top();
-        auto& dict = std::get<0>(frame).get();
+        const auto& dict = std::get<0>(frame).get();
         auto& it = std::get<1>(frame);
 
         if (it != rng::end(dict)) {
@@ -508,7 +506,7 @@ void parse_file_tree_v2(const T& data, metafile& m)
                 }
                 // file_entry paths are relative -> remove the root path componenet
                 auto entry = parse_file_entry_v2(it->second, file_path.relative_path());
-                storage.add_file(std::move(entry));
+                *out++ = std::move(entry);
             }
             else {
                 frames.push(frame_type(value, value.begin()));
@@ -521,6 +519,41 @@ void parse_file_tree_v2(const T& data, metafile& m)
         }
     }
 }
+
+template <bc::bvalue_or_bview T>
+void parse_file_tree_v2(const T& data, metafile& m)
+{
+    std::vector<file_entry> results {};
+    parse_file_tree_v2(data, m, std::back_inserter(results));
+
+    auto& storage = m.storage();
+    for (auto&& r: results) {
+        storage.add_file(std::move(r));
+    }
+}
+
+template <bc::bvalue_or_bview T>
+void parse_file_list_and_tree_hybrid(const T& data, metafile& m)
+{
+    // parse the v1 file list containing padding files.
+    parse_file_list_v1(data, m);
+
+    // add v2 data to the existing file_entries, validate v1 and v2 attributes
+    auto& storage = m.storage();
+
+    std::vector<file_entry> v2_entries {};
+    parse_file_tree_v2(data, m, std::back_inserter(v2_entries));
+
+    const auto path_comparator = [](const file_entry& f1, const file_entry& f2) {
+        return f1.path() == f2.path();
+    };
+
+    for (auto& v2_entry : v2_entries) {
+        auto it = std::find_if(storage.begin(), storage.end(), std::bind_front(path_comparator, v2_entry));
+        it->set_pieces_root(v2_entry.pieces_root());
+    }
+};
+
 
 template <bc::bvalue_or_bview T>
 void parse_pieces_v1(const T& data, metafile& m)
@@ -586,7 +619,7 @@ void parse_piece_layers_v2(const T& data, metafile& m)
 
     for (auto& f: storage) {
         // piece layers are only set for files larger then the piece size
-        if (f.file_size() < m.storage().piece_size())
+        if (f.file_size() < m.storage().piece_size() || f.is_padding_file())
             continue;
 
         auto root = f.pieces_root();
@@ -726,8 +759,10 @@ template<bc::bvalue_or_bview T>
 metafile parse_metafile(const T& data)
 {
     metafile m{};
+    // parse the protocol header to determine if we have v1 or v2.
     auto protocol = detail::parse_protocol(data);
 
+    // v1-only
     if (protocol == protocol::v1) {
         detail::parse_announce(data, m);
         detail::parse_private(data, m);
@@ -746,7 +781,8 @@ metafile parse_metafile(const T& data)
         detail::parse_source(data, m);
         return m;
     }
-    else if ((protocol & protocol::v2) == protocol::v2) {
+    // v2 or hybrid
+    else if (protocol == protocol::v2) {
         detail::parse_announce(data, m);
         detail::parse_private(data, m);
         detail::parse_comment(data, m);
@@ -758,13 +794,18 @@ metafile parse_metafile(const T& data)
         detail::parse_dht_nodes(data, m);
         detail::parse_similar_torrents(data, m);
         detail::parse_name(data, m);
-        detail::parse_file_tree_v2(data, m);
         detail::parse_piece_size(data, m);
-        detail::parse_piece_layers_v2(data, m);
         detail::parse_source(data, m);
 
+
         if (detail::check_if_hybrid(data)) {
+            // we need the v1 file list to get info about padding files and set the correct total file size for v1.
+            detail::parse_file_list_and_tree_hybrid(data, m);
+            detail::parse_piece_layers_v2(data, m);
             detail::parse_pieces_v1(data, m);
+        } else {
+            detail::parse_file_tree_v2(data, m);
+            detail::parse_piece_layers_v2(data, m);
         }
 
         return m;

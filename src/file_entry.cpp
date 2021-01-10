@@ -203,6 +203,12 @@ void file_entry::add_checksum(std::unique_ptr<checksum> value)
     checksums_.emplace(std::string(value->name()), std::move(value));
 }
 
+const file_entry::checksum_map& file_entry::checksums() const
+{
+    return checksums_;
+}
+
+
 void file_entry::set_last_modified_time(fs::file_time_type time)
 {
     last_modified_time_ = time;

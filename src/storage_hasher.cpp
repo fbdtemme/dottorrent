@@ -54,7 +54,7 @@ void storage_hasher::start() {
     // add file checksums hashers and register them with the reader
 
     for (auto algo : checksums_) {
-        auto& h = checksum_hashers_.emplace_back(std::make_unique<checksum_hasher>(algo, storage_));
+        auto& h = checksum_hashers_.emplace_back(std::make_unique<checksum_hasher>(storage_, algo));
         reader_->register_checksum_queue(h->get_queue());
     }
 

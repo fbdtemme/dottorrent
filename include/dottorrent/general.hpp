@@ -78,10 +78,10 @@ struct file_attributes_definition
         symbol<file_attributes::padding_file>
     >;
 
-    static auto map(symbol<file_attributes::executable>)   -> symbol<'x'>;
-    static auto map(symbol<file_attributes::symlink>)      -> symbol<'l'>;
-    static auto map(symbol<file_attributes::hidden>)       -> symbol<'h'>;
-    static auto map(symbol<file_attributes::padding_file>) -> symbol<'p'>;
+    static auto map(symbol<file_attributes::executable>)   -> symbol<'x'>;       // NOLINT
+    static auto map(symbol<file_attributes::symlink>)      -> symbol<'l'>;       // NOLINT
+    static auto map(symbol<file_attributes::hidden>)       -> symbol<'h'>;       // NOLINT
+    static auto map(symbol<file_attributes::padding_file>) -> symbol<'p'>;       // NOLINT
 };
 
 // TODO: Use static string class

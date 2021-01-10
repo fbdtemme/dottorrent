@@ -15,7 +15,6 @@ void v2_chunk_reader::run()
     std::size_t file_index = 0;
     // the current file being read, disable read buffer
     std::ifstream f;
-    f.rdbuf()->pubsetbuf(nullptr, 0);
 
     auto& storage = storage_.get();
     const auto piece_size = storage.piece_size();
@@ -27,12 +26,14 @@ void v2_chunk_reader::run()
         // set last modified date in the file entry of the storage
         storage.set_last_modified_time(file_index, fs::last_write_time(file));
         f.open(file, std::ios::binary);
-        // reset piece index. (piece index is per file for v2)!
+        // reset piece index. piece index is per file for v2!
         piece_index = 0;
 
         while (!cancelled_.load(std::memory_order_relaxed)) {
             f.read(reinterpret_cast<char*>(chunk->data()), chunk_size_);
             current_chunk_size = f.gcount();
+            Expects(current_chunk_size > 0);
+
             chunk->resize(current_chunk_size);
             bytes_read_.fetch_add(current_chunk_size, std::memory_order_relaxed);
 

@@ -18,7 +18,7 @@
 #include <string_view>
 #include <compare>
 
-#include <gsl/gsl>
+#include <gsl-lite/gsl-lite.hpp>
 
 #include <bencode/bencode.hpp>
 #include <bencode/traits/vector.hpp>

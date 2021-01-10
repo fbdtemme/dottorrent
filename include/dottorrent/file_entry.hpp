@@ -87,6 +87,7 @@ public:
         }
     }
 
+    const checksum_map& checksums() const;
 
     bool operator==(const file_entry& rhs) const noexcept;
 

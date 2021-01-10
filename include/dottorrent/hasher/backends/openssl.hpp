@@ -298,6 +298,11 @@ public:
         }
     }
 
+    ~message_digest()
+    {
+        ::EVP_MD_CTX_free(context_);
+    };
+
 private:
     ::EVP_MD_CTX* context_;
     const ::EVP_MD* algorithm_context_;

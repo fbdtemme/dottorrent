@@ -14,11 +14,15 @@ TEST_CASE("test hashers")
         static constexpr std::string_view s = "test";
 
         h->update(s);
-
         sha1_hash out;
         h->finalize_to(out);
-
         CHECK(out.hex_string() == "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
+
+        // check if reset is done correctly
+        h->update(s);
+        sha1_hash out2;
+        h->finalize_to(out2);
+        CHECK(out2.hex_string() == "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3");
     }
 
     SECTION("sha256") {
