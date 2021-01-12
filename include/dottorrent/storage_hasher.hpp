@@ -59,17 +59,6 @@ struct storage_hasher_traits {
     static constexpr std::size_t min_chunk_size = 1_MiB;
 };
 
-/// verify pieces.
-/// First compare file sizes. Only check data for files with exact file size.
-/// When piece contains data from two files of which one is missing this piece will be incomplete.
-// class verify_v1 : public hasher_base<sha1_hasher> {
-//
-//}
-
-// TODO: v1 compatibility
-//    [".pad", "N"]
-
-
 
 /// Options to control the memory usage of a storage_hasher.
 struct storage_hasher_options
@@ -87,7 +76,7 @@ struct storage_hasher_options
 
     /// Number of threads to hash pieces.
     /// Total number of threads will be equal to:
-    /// 1 main thread + 1 reader + <thread> piece hashers + <#checksums types> checsum hashers
+    /// 1 main thread + 1 reader + <thread> piece hashers + <#checksums types> checksum hashers
     std::size_t threads = 2;
 };
 
@@ -112,6 +101,8 @@ public:
 
     const file_storage& storage() const;
 
+    enum protocol protocol() const noexcept;
+
     void start();
 
     void cancel();
@@ -128,11 +119,16 @@ public:
     /// Check if the hasher is still processing tasks or is just waiting.
     bool done() const noexcept;
 
+    /// The number of bytes read from disk by the reader thread.
     std::size_t bytes_read() const noexcept;
 
     /// Return the number of bytes hashed by the v1 or v2 hasher,
     /// or the average between the two for hybrid torrents.
     std::size_t bytes_hashed() const noexcept;
+
+    /// Return the number of bytes hashed by the v1 or v2 hasher,
+    /// or the average between the two for hybrid torrents.
+    std::size_t bytes_done() const noexcept;
 
     /// Get information about the file currently being hashed.
     /// @returns A pair with a pointer to the file_entry and
@@ -147,14 +143,13 @@ public:
 
 private:
     std::reference_wrapper<file_storage> storage_;
-    protocol protocol_;
+    enum protocol protocol_;
     std::unordered_set<hash_function> checksums_;
     memory_options memory_;
     std::size_t threads_;
 
     std::unique_ptr<chunk_reader> reader_;
-    std::unique_ptr<v1_chunk_hasher> v1_hasher_;
-    std::unique_ptr<v2_chunk_hasher> v2_hasher_;
+    std::unique_ptr<chunk_hasher> hasher_;
     std::vector<std::unique_ptr<checksum_hasher>> checksum_hashers_;
 
     bool started_ = false;

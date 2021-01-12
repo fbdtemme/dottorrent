@@ -22,11 +22,11 @@ public:
     using chunk_type = data_chunk;
     using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
 
-    explicit chunk_hasher(file_storage& storage, hash_function hf, std::size_t thread_count )
+    explicit chunk_hasher(file_storage& storage, std::vector<hash_function> hf, std::size_t thread_count = 1)
             : storage_(storage)
             , threads_(thread_count)
             , queue_(std::make_shared<queue_type>())
-            , hash_function_(hf)
+            , hash_functions_(hf)
     { }
 
     chunk_hasher(const chunk_hasher& other) = delete;
@@ -108,19 +108,23 @@ public:
     auto get_queue() -> const std::shared_ptr<queue_type>&
     { return queue_; }
 
-    /// Number of total bytes processed.
+    /// Number of total bytes hashes.
     auto bytes_hashed() const noexcept -> std::size_t
     { return bytes_hashed_.load(std::memory_order_relaxed); }
 
-    /// Number of pieces processed.
-    auto pieces_done() const noexcept -> std::size_t
-    { return pieces_done_.load(std::memory_order_relaxed); }
+    /// Number of bytes processed.
+    auto bytes_done() const noexcept -> std::size_t
+    { return bytes_done_.load(std::memory_order_relaxed); }
 
 protected:
     virtual void run(int thread_idx)
     {
         // copy the global hasher object to a per-thread hasher
-        auto hasher = make_hasher(hash_function_);
+        std::vector<std::unique_ptr<hasher>> hashers {};
+        for (const auto f : hash_functions_) {
+            hashers.push_back(std::move(make_hasher(f)));
+        }
+
         data_chunk item {};
         auto stop_token = threads_[thread_idx].get_stop_token();
 
@@ -132,7 +136,7 @@ protected:
                 continue;
             }
 
-            hash_chunk(*hasher, item);
+            hash_chunk(hashers, item);
             item.data.reset();
         }
 
@@ -143,27 +147,27 @@ protected:
                 if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
                     break;
                 }
-                hash_chunk(*hasher, item);
+                hash_chunk(hashers, item);
             }
         }
     }
 
-    virtual void hash_chunk(hasher& hasher, const data_chunk& chunk) = 0;
+    virtual void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) = 0;
 
 protected:
     std::reference_wrapper<file_storage> storage_;
     std::vector<std::jthread> threads_;
     std::shared_ptr<queue_type> queue_;
-    hash_function hash_function_;
+    std::vector<hash_function> hash_functions_;
 
     std::atomic<bool> started_ = false;
     std::atomic<bool> cancelled_ = false;
     std::atomic<bool> stopped_ = false;
 
-    // The amount of bytes that were hashed.
+    // The amount of bytes that were actually hashed.
     std::atomic<std::size_t> bytes_hashed_ = 0;
     // How many pieces were processed (some pieces can be processed without hashing).
-    std::atomic<std::size_t> pieces_done_ = 0;
+    std::atomic<std::size_t> bytes_done_ = 0;
 };
 
 

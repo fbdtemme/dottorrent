@@ -66,44 +66,24 @@ struct symbol {
     static constexpr auto value = v;
 };
 
-struct file_attributes_definition
+
+inline std::string to_string(dottorrent::file_attributes v)
 {
-    using value_type = file_attributes;
-    static constexpr std::size_t max_size = 4;
-
-    using symbol_list = std::tuple<
-        symbol<file_attributes::executable>,
-        symbol<file_attributes::symlink>,
-        symbol<file_attributes::hidden>,
-        symbol<file_attributes::padding_file>
-    >;
-
-    static auto map(symbol<file_attributes::executable>)   -> symbol<'x'>;       // NOLINT
-    static auto map(symbol<file_attributes::symlink>)      -> symbol<'l'>;       // NOLINT
-    static auto map(symbol<file_attributes::hidden>)       -> symbol<'h'>;       // NOLINT
-    static auto map(symbol<file_attributes::padding_file>) -> symbol<'p'>;       // NOLINT
-};
-
-// TODO: Use static string class
-template <typename Mapping>
-static auto to_string_generator(typename Mapping::value_type v) -> std::string
-{
-    using value_type = typename Mapping::value_type;
-    using symbol_list = typename Mapping::symbol_list;
-
-    std::string str {};
-    str.reserve(Mapping::max_size);
-
-    std::apply([&](auto... v) {
-        (str.push_back(decltype(Mapping::map(v))::value), ...);
-    }, symbol_list{});
-
-    return str;
-};
-
-inline auto to_string(dottorrent::file_attributes v) -> std::string
-{
-    return to_string_generator<file_attributes_definition>(v);
+    std::string out = "";
+    if (v == file_attributes::none) return out;
+    if ((v & file_attributes::executable) == file_attributes::executable){
+        out.push_back('x');
+    }
+    if ((v & file_attributes::symlink) == file_attributes::symlink) {
+        out.push_back('l');
+    }
+    if ((v & file_attributes::hidden) == file_attributes::hidden) {
+        out.push_back('h');
+    }
+    if ((v & file_attributes::padding_file) == file_attributes::padding_file) {
+        out.push_back('p');
+    }
+    return out;
 }
 
 constexpr file_attributes make_file_attributes(std::string_view value)

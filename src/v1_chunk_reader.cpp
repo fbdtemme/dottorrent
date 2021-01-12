@@ -7,135 +7,134 @@ namespace dottorrent {
 void v1_chunk_reader::run()
 {
     const auto file_paths = absolute_file_paths(storage_);
-    // index of the first piece in a chunk
-    std::size_t piece_index = 0;
-    // position of the first free byte in the current chunk
-    std::size_t chunk_offset = 0;
-    // position of the first byte from a different file than the
-    // previous byte in the current chunk. A file offset of zero
-    // indicates all data is from a single file.
-    std::size_t offset_index = 0;
-    // vector of all offsets in the current chunk.
-    std::vector<std::size_t> file_offsets {};
-    // index of the current file being read in the storage object
-    std::size_t file_index = 0;
-    // the current file being read, disable read buffer
-    std::ifstream f;
 
     auto& storage = storage_.get();
     const auto piece_size = storage.piece_size();
 
     Expects(chunk_size_ % piece_size == 0);
-    const auto pieces_per_chunk = chunk_size_ / piece_size;
-    auto chunk = pool_.get();
-    chunk->resize(chunk_size_);
+    const auto pieces_per_chunk = chunk_size_/piece_size;
+    chunk_ = pool_.get();
+    chunk_->resize(chunk_size_);
 
-    for (const fs::path& file: file_paths) {
+    for (const fs::path& file_path: file_paths) {
+        const file_entry& file_entry = storage.at(file_index_);
 
         // handle pieces if the file does not exists. Used when verifying torrents.
-        if (!fs::exists(file)) {
-            auto missing_file_size = storage.at(file_index).file_size();
-
-            // fill current piece in this chunk with zero bytes.
-            if (chunk_offset != 0) {
-                auto pieces_in_this_chunk = (chunk_offset + piece_size - 1) / piece_size;
-                auto missing_piece_bytes = (pieces_in_this_chunk * piece_size) - chunk_offset;
-                // add a offset to indicate that the piece contains zero'd bytes from a new file
-                file_offsets.push_back(chunk_offset);
-                std::fill_n(std::next(chunk->data(), chunk_offset), missing_piece_bytes, std::byte(0));
-                // we processed missing_piece_bytes bytes from the total missing_file_size.
-                // resize chunk to the number of pieces it contains
-                chunk_offset += missing_piece_bytes;
-                missing_file_size -= missing_piece_bytes;
-                chunk->resize(chunk_offset);
-
-                // push the chunk with partially zero'd data.
-                push({static_cast<std::uint32_t>(piece_index),
-                      static_cast<std::uint32_t>(file_index - file_offsets.size()),
-                      std::move(chunk)
-                });
-                // recycle a new chunk from the pool
-                chunk = pool_.get();
-                chunk->resize(chunk_size_);
-                // clear chunk and file offsets
-                chunk_offset = 0;
-                file_offsets.clear();
-                // increment chunk index
-                piece_index += pieces_in_this_chunk;
-            }
-
-            // advance piece index to the first piece that contains data from a new file.
-            // push empty pieces to make hashers aware that these bytes are done,
-            // but they do not require any work
-            auto first_new_piece_index = piece_index + missing_file_size / piece_size;
-            for ( ; piece_index < first_new_piece_index; ++piece_index)
-            {
-                push({static_cast<std::uint32_t>(piece_index),
-                      static_cast<std::uint32_t>(file_index),
-                      nullptr});
-            }
-
-            // Set the bytes of the last piece of the missing file to zero.
-            auto last_piece_bytes = missing_file_size % piece_size;
-            std::fill_n(chunk->data() + chunk_offset, last_piece_bytes, std::byte(0));
-            chunk_offset += last_piece_bytes;
-
-            // open the next file and continue hashing
+        if (!fs::exists(file_path) || file_entry.is_padding_file()) {
+            handle_missing_file();
             continue;
         }
 
         // set last modified date in the file entry of the storage
-        storage.set_last_modified_time(file_index, fs::last_write_time(file));
-        f.open(file, std::ios::binary);
+        storage.set_last_modified_time(file_index_, fs::last_write_time(file_path));
+        f_.open(file_path, std::ios::binary);
         // increment file index, file_index points to the next file now
-        ++file_index;
+        ++ file_index_;
 
-        while (!cancelled_.load(std::memory_order_relaxed)) {
-            f.read(reinterpret_cast<char*>(std::next(chunk->data(), chunk_offset)),
-                    (chunk_size_ - chunk_offset)
+        while (! cancelled_.load(std::memory_order_relaxed)) {
+            f_.read(reinterpret_cast<char*>(std::next(chunk_->data(), chunk_offset_)),
+                    (chunk_size_-chunk_offset_)
             );
-            file_offsets.push_back(chunk_offset);
-            chunk_offset += f.gcount();
-            bytes_read_.fetch_add(f.gcount(), std::memory_order_relaxed);
+            file_offsets_.push_back(chunk_offset_);
+            chunk_offset_ += f_.gcount();
+            bytes_read_.fetch_add(f_.gcount(), std::memory_order_relaxed);
 
-            if (chunk_offset == chunk_size_) {
+            if (chunk_offset_ == chunk_size_) {
                 // push chunk to consumers
-                push({static_cast<std::uint32_t>(piece_index),
-                      static_cast<std::uint32_t>(file_index-file_offsets.size()),
-                      chunk
+                push({static_cast<std::uint32_t>(piece_index_),
+                      static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
+                      chunk_
                 });
                 // recycle a new chunk from the pool
-                chunk = pool_.get();
-                chunk->resize(chunk_size_);
+                chunk_ = pool_.get();
+                chunk_->resize(chunk_size_);
                 // clear chunk and file offsets
-                chunk_offset = 0;
-                file_offsets.clear();
+                chunk_offset_ = 0;
+                file_offsets_.clear();
                 // increment chunk index
-                piece_index += pieces_per_chunk;
+                piece_index_ += pieces_per_chunk;
             }
             // eof reached
-            if (f.eof()) break;
+            if (f_.eof()) break;
         }
-        f.close();
-        f.clear();
+        f_.close();
+        f_.clear();
     }
-
-    // update size for last piece
-    if (chunk_offset > 0) {
-        chunk->resize(chunk_offset);
-        push({static_cast<std::uint32_t>(piece_index),
-              static_cast<std::uint32_t>(file_index-file_offsets.size()),
-              std::move(chunk)
-        });
+    // push last possibly partial chunk
+    if (chunk_offset_ != 0) {
+        chunk_->resize(chunk_offset_);
+        push({static_cast<std::uint32_t>(piece_index_),
+              static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
+              std::move(chunk_)});
     }
 }
 
-void v1_chunk_reader::push(const data_chunk& chunk) {
+void v1_chunk_reader::handle_missing_file()
+{
+    auto& storage = storage_.get();
+    const auto piece_size = storage.piece_size();
+
+    Expects(chunk_size_ % piece_size == 0);
+    const auto pieces_per_chunk = chunk_size_ / piece_size;
+
+    // the number of missing bytes
+    auto missing_file_size = storage.at(file_index_).file_size();
+
+    // fill current pieces in this chunk with zero bytes.
+    if (chunk_offset_ != 0) {
+        // we need to fill the remaining chunk data with 0'd bytes from missing_file_size
+        auto bytes_to_fill = std::min(chunk_size_-chunk_offset_, missing_file_size);
+        // add a offset to indicate that the piece contains zero'd bytes from a new file
+        file_offsets_.push_back(chunk_offset_);
+        std::fill_n(std::next(chunk_->data(), chunk_offset_), bytes_to_fill, std::byte(0));
+        // we processed missing_piece_bytes bytes from the total missing_file_size.
+        // resize chunk to the number of pieces it contains
+        chunk_offset_ += bytes_to_fill;
+        missing_file_size -= bytes_to_fill;
+
+        // if the chunk is complete filled -> push it
+        if (chunk_offset_ == chunk_size_) {
+            // push chunk to consumers
+            push({static_cast<std::uint32_t>(piece_index_),
+                  static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
+                  chunk_
+            });
+            // recycle a new chunk from the pool
+            chunk_ = pool_.get();
+            chunk_->resize(chunk_size_);
+            // clear chunk and file offsets
+            chunk_offset_ = 0;
+            file_offsets_.clear();
+            // increment chunk index
+            piece_index_ += pieces_per_chunk;
+        }
+    }
+
+    // advance piece index to the first piece that contains data from a new file.
+    // push an empty chunk per piece to make hashers aware that these pieces are done,
+    // but they do not require any work
+    auto first_new_piece_index = piece_index_ + missing_file_size / piece_size;
+    auto first_piece_index_of_new_chunk = first_new_piece_index - (first_new_piece_index % pieces_per_chunk);
+    missing_file_size -= piece_size * (first_new_piece_index - piece_index_);
+
+    for (; piece_index_ < first_new_piece_index; ++piece_index_) {
+        push({static_cast<std::uint32_t>(piece_index_),
+              static_cast<std::uint32_t>(file_index_),
+              nullptr});
+    }
+
+    // Set the last remaining bytes in the new chunk
+    std::fill_n(chunk_->data() + chunk_offset_, missing_file_size, std::byte(0));
+    chunk_offset_ += missing_file_size;
+}
+
+
+void v1_chunk_reader::push(const data_chunk& data_chunk) {
     for (auto& queue : hash_queues_) {
-        queue->push(chunk);
+        queue->push(data_chunk);
     }
     for (auto& queue: checksum_queues_) {
-        queue->push(chunk);
+        queue->push(data_chunk);
     }
 }
 

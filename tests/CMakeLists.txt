@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
 find_package(Catch2 REQUIRED)
-
 include(Catch)
 
 add_executable(dottorrent-tests
@@ -17,7 +16,9 @@ add_executable(dottorrent-tests
         test_checksum_hasher.cpp
         test_storage_verifier.cpp
         test_hashers.cpp
-        test_hex.cpp)
+        test_hex.cpp
+        test_file_storage.cpp
+        test_file_attributes.cpp)
 
 
 target_link_libraries(dottorrent-tests Catch2::Catch2 dottorrent)

@@ -1,6 +1,7 @@
 //
 // Created by fbdtemme on 9/11/20.
 //
+#include <fmt/format.h>
 #include "dottorrent/file_entry.hpp"
 
 namespace dottorrent
@@ -26,6 +27,7 @@ file_entry::file_entry(const file_entry& other)
         , file_size_(other.file_size_)
         , checksums_()
         , pieces_root_(other.pieces_root_)
+        , piece_layer_(other.piece_layer_)
         , attributes_(other.attributes_)
         , symlink_path_(other.symlink_path_)
         , last_modified_time_(other.last_modified_time_)
@@ -47,6 +49,7 @@ file_entry::file_entry(file_entry&& other) noexcept
     , file_size_(other.file_size_)
     , checksums_(std::move(other.checksums_))
     , pieces_root_(other.pieces_root_)
+    , piece_layer_(std::move(other.piece_layer_))
     , attributes_(other.attributes_)
     , symlink_path_(std::move(other.symlink_path_))
     , last_modified_time_(other.last_modified_time_)
@@ -65,6 +68,7 @@ file_entry& file_entry::operator=(const file_entry& other) {
     path_ = other.path_;
     file_size_ = other.file_size_;
     pieces_root_ = other.pieces_root_;
+    piece_layer_ = other.piece_layer_;
     attributes_ = other.attributes_;
     symlink_path_ = other.symlink_path_;
     last_modified_time_ = other.last_modified_time_;
@@ -86,6 +90,7 @@ file_entry& file_entry::operator=(file_entry&& other) noexcept
     path_ = std::move(other.path_);
     file_size_ = other.file_size_;
     pieces_root_ = other.pieces_root_;
+    piece_layer_ = std::move(other.piece_layer_);
     attributes_ = other.attributes_;
     symlink_path_ = std::move(other.symlink_path_);
     last_modified_time_ = other.last_modified_time_;
@@ -291,5 +296,14 @@ file_entry make_file_entry(fs::path file, const fs::path& root_directory, file_o
     return file_entry(std::move(relative_file), file_size,
                       attributes, std::move(symlink_path));
 }
+
+
+file_entry make_padding_file_entry(std::size_t padding_size)
+{
+    using namespace fmt::literals;
+    auto path = fs::path(".pad/{}"_format(padding_size));
+    return file_entry(path, padding_size, file_attributes::padding_file);
+}
+
 
 }

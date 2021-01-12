@@ -1,21 +1,22 @@
 #pragma once
 
+#include <mutex>
+#include <shared_mutex>
 #include <gsl-lite/gsl-lite.hpp>
-#include <tbb/concurrent_vector.h>
+
 #include "dottorrent/hash.hpp"
 #include "dottorrent/hash_function_traits.hpp"
 #include "dottorrent/hasher/factory.hpp"
 
 namespace dottorrent {
 
-//template <hash_type T> class merkle_tree;
-
+namespace detail {
 struct merkle_node_position
 {
     std::uint32_t layer;
     std::uint32_t index;
 };
-
+}
 
 template <hash_function FN>
 class merkle_tree
@@ -23,7 +24,7 @@ class merkle_tree
 public:
     using value_type = typename hash_function_traits<FN>::hash_type;
     using flat_index = std::size_t;
-    using node_position = merkle_node_position;
+    using node_position = detail::merkle_node_position;
 
     explicit merkle_tree() noexcept = default;
     explicit merkle_tree(std::size_t leaf_nodes)
@@ -51,6 +52,9 @@ public:
         if (&other == this)
             return *this;
 
+        std::unique_lock lck1{data_.mutex_, std::defer_lock};
+        std::unique_lock lck2{other.mutex_, std::defer_lock};
+        std::lock(lck1, lck2);
         data_ = other.data_;
     }
 
@@ -59,17 +63,22 @@ public:
         if (&other == this)
             return *this;
 
+        std::unique_lock lck1{data_.mutex_, std::defer_lock};
+        std::unique_lock lck2{other.mutex_, std::defer_lock};
+        std::lock(lck1, lck2);
         data_ = std::move(other.data_);
     }
 
-    /// Set the number of leaf nodes and initialize then to `value`
+    /// Set the number of leaf nodes and initialize them to `value`
     /// If no value is given the nodes will be default constructed.
     /// All current values are invalidated.
+    /// @remark Not thread-safe.
     void set_leaf_nodes(std::size_t leaf_nodes, const value_type& value = {})
     {
         std::size_t height = detail::log2_ceil(leaf_nodes);
         std::size_t node_count = total_node_count_for_height(height);
 
+        std::unique_lock lck{mutex_};
         data_.clear();
         data_.assign(node_count, value);
     }
@@ -105,7 +114,10 @@ public:
     /// Return the merkle root.
     /// If the merkle root is not set it will return a zero-initialized value.
     const value_type& root()
-    { return data_[0]; }
+    {
+        std::shared_lock lck{mutex_};
+        return data_[0];
+    }
 
     /// Return a const reference to the underlying representation.
     const std::vector<value_type>& data() const
@@ -123,8 +135,9 @@ public:
     /// Return the node at given layer and index
      const value_type& get_node(std::size_t layer, std::size_t index) const
     {
-        Ensures(layer <=tree_height());
+        Ensures(layer <= tree_height());
         Ensures(index < nodes_in_layer(layer));
+        std::shared_lock lck{mutex_};
         return data_[get_flat_index(layer, index)];
     }
 
@@ -140,31 +153,38 @@ public:
 
     std::size_t node_count() const
     {
+        std::shared_lock lck{mutex_};
         return data_.size();
     }
 
     std::size_t leaf_count() const
     {
+        std::shared_lock lck{mutex_};
         return (data_.size() + 1) / 2 ;
     }
 
     std::size_t tree_height() const
     {
+        std::shared_lock lck{mutex_};
         return get_node_layer(data_.size()-1);
     }
 
 private:
     void set_node(std::size_t layer, std::size_t index, const value_type& value) noexcept
     {
-        Ensures(layer <= tree_height());
-        Ensures(index < nodes_in_layer(layer));
-        data_[get_flat_index(layer, index)] = value;
+        Expects(layer <= tree_height());
+        Expects(index < nodes_in_layer(layer));
+
+        auto flat_index = get_flat_index(layer, index);
+        Expects(flat_index < data_.size());
+        std::unique_lock lck{mutex_};
+        data_[flat_index] = value;
     }
 
     static constexpr std::size_t nodes_in_layer(std::size_t layer) noexcept
     { return (1U << layer); }
 
-    static constexpr std::size_t total_node_count_for_height(std::size_t height)
+    static constexpr std::size_t total_node_count_for_height(std::size_t height) noexcept
     { return (1U << (height + 1)) - 1; }
 
     static constexpr std::size_t get_flat_index(std::size_t layer, std::size_t index) noexcept
@@ -173,7 +193,7 @@ private:
     static constexpr std::size_t get_node_layer(std::size_t flat_index) noexcept
     { return detail::log2_floor(flat_index+1); }
 
-    static constexpr merkle_node_position get_node_index(std::size_t flat_index) noexcept
+    static constexpr node_position get_node_index(std::size_t flat_index) noexcept
     {
         auto layer = get_node_layer(flat_index);
         auto index = flat_index - get_flat_index(layer, 0);
@@ -197,7 +217,8 @@ private:
     static constexpr std::size_t right_child_n(std::size_t flat_idx, std::size_t n) noexcept
     { return (flat_idx * (2U << n)) + (4U << n) - 2; }
 
-    tbb::concurrent_vector<value_type> data_;
+    std::vector<value_type> data_;
+    mutable std::shared_mutex mutex_;
 };
 
 } // namespace dottorrent

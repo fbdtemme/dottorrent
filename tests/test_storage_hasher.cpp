@@ -59,6 +59,28 @@ TEST_CASE("test v2 hashing")
     CHECK(hasher.done());
 }
 
+TEST_CASE("test hybrid hashing")
+{
+    metafile m {};
+    fs::path root(TEST_DIR);
+
+    auto& storage = m.storage();
+    storage.set_root_directory(root);
+
+    for (auto&f : fs::recursive_directory_iterator(root)) {
+        if (!f.is_regular_file()) continue;
+        storage.add_file(f);
+    }
+    choose_piece_size(storage);
+    storage_hasher hasher(storage, {.protocol_version = protocol::hybrid});
+    hasher.start();
+    CHECK(hasher.started());
+    CHECK_FALSE(hasher.cancelled());
+    CHECK_FALSE(hasher.done());
+    hasher.wait();
+    CHECK(hasher.done());
+}
+
 TEST_CASE("test v1 hashing - blake2b512 checksums")
 {
     metafile m {};

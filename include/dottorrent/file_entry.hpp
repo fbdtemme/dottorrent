@@ -49,7 +49,7 @@ public:
     const sha256_hash& pieces_root() const;
 
     void set_pieces_root(const sha256_hash& hash) noexcept;
-//
+
     std::span<const sha256_hash> piece_layer() const;
 
     void set_piece_layer(std::span<const sha256_hash> range);
@@ -121,5 +121,9 @@ file_entry make_file_entry(fs::path file,
                             const fs::path& root_directory,
                             file_options options = default_file_options);
 
+/// Create a padding file using the BEP47 canonical path.
+/// @param padding_size The size of the padding file.
+/// @returns A file entry of the padding file.
+file_entry make_padding_file_entry(std::size_t padding_size);
 
 } // namespace dottorrent

@@ -40,13 +40,17 @@ void file_storage::set_root_directory(const fs::path& root)
 
 void file_storage::add_file(const file_entry& file)
 {
-    total_file_size_ += file.file_size();
+    auto s = file.file_size();
+    total_file_size_ += s;
+    if (!file.is_padding_file()) { total_regular_file_size_ += s; }
     files_.push_back(file);
 }
 
 void file_storage::add_file(file_entry&& file)
 {
-    total_file_size_ += file.file_size();
+    auto s = file.file_size();
+    total_file_size_ += s;
+    if (!file.is_padding_file()) { total_regular_file_size_ += s; }
     files_.push_back(std::move(file));
 }
 
@@ -62,7 +66,9 @@ void file_storage::remove_file(const file_entry& entry)
             [&](const file_entry& x) { return x == entry; });
 
     if (it != std::end(files_)) {
-        total_file_size_ -= it->file_size();
+        auto s = it->file_size();
+        total_file_size_ -= s;
+        if (!it->is_padding_file()) { total_regular_file_size_ -= s; }
         files_.erase(it);
     }
 }
@@ -83,6 +89,21 @@ file_mode file_storage::file_mode() const
     return file_mode::multi;
 }
 
+enum protocol file_storage::protocol() const noexcept
+{
+    bool v1 = !pieces_.empty();
+    bool v2 = rng::all_of(files_, [](const file_entry& entry) {
+        // all regular files must have v2 data, skip pad files and symlinks
+        if (entry.is_padding_file() || entry.is_symlink()) return true;
+        return entry.has_v2_data();
+    });
+
+    if (v1 && v2) return protocol::v1 | protocol::v2;
+    else if (v1)  return protocol::v1;
+    else if (v2)  return protocol::v2;
+    else          return protocol::none;
+}
+
 std::size_t file_storage::piece_size() const noexcept
 {
     return piece_size_;
@@ -91,7 +112,6 @@ std::size_t file_storage::piece_size() const noexcept
 std::size_t file_storage::piece_count() const noexcept
 {
     if (piece_size_ == 0) return 0;
-    // round up
     return ((total_file_size_ + piece_size_-1) / piece_size_);
 }
 
@@ -183,8 +203,8 @@ std::span<const sha1_hash> file_storage::get_piece_hash_range(std::size_t file_i
 
 void file_storage::set_piece_hash(std::size_t index, const sha1_hash& hash)
 {
-    Expects(index < piece_count());
     Expects(index < pieces_.size());
+    Expects(pieces_.size() == piece_count());
     std::unique_lock lck{pieces_mutex_};
     pieces_[index] = hash;
 }
@@ -208,7 +228,21 @@ auto choose_piece_size(file_storage& storage) -> std::size_t
     return piece_size;
 }
 
-auto directory_count(const file_storage& storage, const fs::path& root) -> std::size_t
+/// Check if a directory contains only padding files.
+bool is_padding_directory(const file_storage& storage, const fs::path& directory)
+{
+    std::vector<const file_entry*> files {};
+
+    for (const auto& f: storage) {
+        if (f.path().string().starts_with(directory.string())) {
+            files.push_back(&f);
+        }
+    }
+    return rng::all_of(files, [](const file_entry* e) { return e->is_padding_file(); });
+}
+
+
+std::size_t directory_count(const file_storage& storage, const fs::path& root, bool include_padding_directories)
 {
     std::set<std::string> directories {};
     for (const auto& f : storage) {
@@ -225,8 +259,18 @@ auto directory_count(const file_storage& storage, const fs::path& root) -> std::
             it++;
         }
     }
-    return directories.size();
+    if (include_padding_directories)
+        return directories.size();
+
+    std::size_t directory_count = 0;
+    for (const auto& dir: directories) {
+        if (!is_padding_directory(storage, dir)) {
+            ++directory_count;
+        }
+    }
+    return directory_count;
 }
+
 
 auto exclusive_file_size_scan(const file_storage& storage) -> std::vector<std::size_t>
 {
@@ -240,14 +284,31 @@ auto exclusive_file_size_scan(const file_storage& storage) -> std::vector<std::s
     return res;
 }
 
-auto inclusive_file_size_scan(const file_storage& storage) -> std::vector<std::size_t>
+std::vector<std::size_t> inclusive_file_size_scan_v1(const file_storage& storage)
 {
     std::vector<std::size_t> res{};
     res.reserve(storage.file_count());
 
     std::transform_inclusive_scan(
             storage.begin(), storage.end(), std::back_inserter(res), std::plus<>{},
-            [&](const file_entry& e) { return e.file_size(); }
+            [&](const file_entry& e) { return e.file_size(); }, 0ul
+    );
+    return res;
+}
+
+std::vector<std::size_t> inclusive_file_size_scan_v2(const file_storage& storage)
+{
+    std::vector<std::size_t> res{};
+    res.reserve(storage.file_count());
+
+    std::transform_inclusive_scan(
+            storage.begin(), storage.end(), std::back_inserter(res), std::plus<>{},
+            [&](const file_entry& e) {
+                // v2 padding for hybrid torrents is implicit, padding files are not counted in progress
+                if (e.is_padding_file()) { return 0ul; }
+                return e.file_size();
+            },
+            0ul
     );
     return res;
 }
@@ -295,5 +356,55 @@ std::string make_v2_piece_layers_string(const file_entry& entry)
 }
 
 
+bool is_piece_aligned(const file_storage& storage) noexcept
+{
+    Expects(storage.piece_size() != 0);
+
+    const std::size_t piece_size = storage.piece_size();
+    std::size_t bytes_offset = 0;
+
+    bool is_aligned = true;
+    for (const auto& entry : storage) {
+        if (!entry.is_padding_file()) {
+            is_aligned &= (bytes_offset % piece_size == 0);
+        }
+        bytes_offset += entry.file_size();
+    }
+    return is_aligned;
+}
+
+
+void optimize_alignment(file_storage& storage)
+{
+    // piece size needs to be initialized
+    Expects(storage.piece_size() != 0);
+
+    const std::size_t piece_size = storage.piece_size();
+
+    std::size_t total_padding_bytes = 0;
+    std::vector<file_entry> aligned_entries {};
+
+    for (std::size_t i = 0; i < storage.file_count()-1; ++i) {
+        auto& entry = storage[i];
+        auto size = entry.file_size();
+        aligned_entries.push_back(std::move(entry));
+
+        auto bytes_till_next_piece = piece_size - (size % piece_size);
+
+        Expects(bytes_till_next_piece != 0);
+        if (bytes_till_next_piece != piece_size) [[likely]] {
+            aligned_entries.push_back(make_padding_file_entry(bytes_till_next_piece));
+            total_padding_bytes += bytes_till_next_piece;
+        }
+    }
+    // add the last file
+    aligned_entries.push_back(std::move(storage.back()));
+
+    // clear old storage and set new
+    storage.clear();
+    storage.add_files(aligned_entries.begin(), aligned_entries.end());
+
+    Ensures(storage.total_file_size() == storage.total_regular_file_size() + total_padding_bytes);
+}
 
 }

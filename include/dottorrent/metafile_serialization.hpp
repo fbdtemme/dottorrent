@@ -17,6 +17,8 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m);
 
 bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m);
 
+bencode::bvalue make_bvalue_common(const metafile& m);
+
 bencode::bvalue make_bvalue_v1(const metafile& m);
 
 bencode::bvalue make_bvalue_v2(const metafile& m);

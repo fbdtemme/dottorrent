@@ -104,24 +104,11 @@ constexpr bool always_false_v = always_false<Args...>::value;
 //}
 
 
-template <typename T>
-    requires std::is_integral_v<T>
-constexpr bool is_power_of_2(T number)
-{
-    if constexpr (std::is_signed_v<T>) {
-        return number > 0 && !(number & (number -1));
-    }
-    else if constexpr (std::is_unsigned_v<T>) {
-        return ((number & (-number)) == number) && (number != 0);
-
-    }
+constexpr unsigned long long log2_floor(unsigned long long x) noexcept {
+    return x ? 63 - std::countl_zero(x) : 0;
 }
 
-constexpr auto log2_floor(unsigned long long x) noexcept -> unsigned long long {
-    return 63 - std::countl_zero(x);
-}
-
-constexpr auto log2_ceil(unsigned long long x) noexcept -> unsigned long long {
+constexpr unsigned long long log2_ceil(unsigned long long x) noexcept {
     return log2_floor(2*x - 1);
 }
 

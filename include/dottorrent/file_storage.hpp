@@ -92,7 +92,10 @@ public:
     void remove_file(const file_entry& entry);
 
     void clear()
-    { files_.clear(); }
+    {
+        files_.clear();
+        total_file_size_ = 0;
+    }
 
     const file_entry& operator[](std::size_t index) const noexcept
     {
@@ -106,6 +109,29 @@ public:
         return files_[index];
     }
 
+    file_entry& front() noexcept
+    {
+        Expects(files_.size() >= 1);
+        return files_[0];
+    }
+
+    const file_entry& front() const noexcept
+    {
+        Expects(files_.size() >= 1);
+        return files_[0];
+    }
+    file_entry& back() noexcept
+    {
+        Expects(files_.size() >= 1);
+        return files_[files_.size()-1];
+    }
+
+    const file_entry& back() const noexcept
+    {
+        Expects(files_.size() >= 1);
+        return files_[files_.size()-1];
+    }
+
     file_entry& at(std::size_t pos)
     { return files_.at(pos); }
 
@@ -114,6 +140,13 @@ public:
 
     std::size_t total_file_size() const
     { return total_file_size_; }
+
+    // Total file size without taking padding files into account.
+    std::size_t total_regular_file_size() const
+    {
+        return std::transform_reduce(files_.begin(), files_.end(), 0ul, std::plus<std::size_t>{},
+            [](const file_entry& f) { return !f.is_padding_file() ? f.file_size() : 0ul; });
+    }
 
     std::size_t file_count() const
     { return files_.size(); }
@@ -128,23 +161,9 @@ public:
     /// v2 means that only v2 metafiles can be created from this file_storage instance.
     /// hybrid means that v1, v2 or hybrid metafiles can be created from this file_storage instance.
     /// Objects of which the files have not been hashed return protocol::none.
-    auto protocol() const noexcept -> protocol
-    {
-        bool v1 = !pieces_.empty();
-        bool v2 = rng::all_of(files_, [](const file_entry& entry) {
-            // all regular files must have v2 data, skip pad files and symlinks
-            if (entry.is_padding_file() || entry.is_symlink()) return true;
-            return entry.has_v2_data();
-        });
-
-        if (v1 && v2) return protocol::v1 | protocol::v2;
-        else if (v1)  return protocol::v1;
-        else if (v2)  return protocol::v2;
-        else          return protocol::none;
-    }
+    enum protocol protocol() const noexcept;
 
     size_type piece_size() const noexcept;
-
 
     size_type piece_count() const noexcept;
 
@@ -204,7 +223,10 @@ public:
     bool operator==(const file_storage& other) const;
 
 private:
+    // Total size of all file_entry.
     std::size_t total_file_size_ {};
+    // Total size of all regular file entries, excluded padding files.
+    std::size_t total_regular_file_size_ {};
     std::size_t piece_size_ {};
 
     /// If root directory is a single directory this file is not associated with a physical
@@ -219,17 +241,20 @@ private:
 
 //   TODO: Allow configurable piece size.
 /// Choose and set the piece size for a file_storage object.
-auto choose_piece_size(file_storage& storage) -> std::size_t;
+std::size_t choose_piece_size(file_storage& storage);
 
+bool is_padding_directory(const file_storage& storage, const fs::path& directory);
 
-auto directory_count(const file_storage& storage, const fs::path& root = "") -> std::size_t;
+std::size_t directory_count(const file_storage& storage, const fs::path& root = "", bool include_padding_directories = true);
 
 /// Return a vector with the cumulative file size.
 auto exclusive_file_size_scan(const file_storage& storage) -> std::vector<std::size_t>;
 
-/// Return a vector with the cumulative file size.
-auto inclusive_file_size_scan(const file_storage& storage) -> std::vector<std::size_t>;
+/// Return a vector with the cumulative file size. Padding files are included.
+std::vector<std::size_t> inclusive_file_size_scan_v1(const file_storage& storage);
 
+/// Return a vector with the cumulative file size. Padding files are included as zero size files.
+std::vector<std::size_t> inclusive_file_size_scan_v2(const file_storage& storage);
 
 /// Return a vector with absolute file paths.
 /// @throws std::invalid_argument if storage is not linked to a physical storage location.
@@ -259,5 +284,13 @@ void verify_piece_layers(const file_storage& storage, OutputIt out)
     }
 
 }
+
+/// Verify if the file in a file_storage object are alligned to piece boundaries.
+/// @returns true if aligned, false otherwise.
+bool is_piece_aligned(const file_storage& storage) noexcept;
+
+/// Add padding files as to align all files to piece boundaries.
+/// Necessary for creating hybrid torrents.
+void optimize_alignment(file_storage& storage);
 
 } // namespace dottorrent

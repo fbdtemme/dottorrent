@@ -125,19 +125,22 @@ public:
 
     void set_source(std::string_view source);
 
-    bool is_private() const;
+    bool is_private() const noexcept;
 
-    void set_private(bool flag = true);
+    void set_private(bool flag = true) noexcept;
 
-    const file_storage& storage() const;
+    const file_storage& storage() const noexcept;
 
-    file_storage& storage();
+    file_storage& storage() noexcept;
 
-    std::size_t piece_size() const;
+    std::size_t piece_size() const noexcept;
 
-    std::size_t piece_count() const;
+    std::size_t piece_count() const noexcept;
 
-    std::size_t total_file_size() const;
+    std::size_t total_file_size() const noexcept;
+
+    std::size_t total_regular_file_size() const noexcept;
+
 
     bool operator==(const metafile& other) const = default;
 

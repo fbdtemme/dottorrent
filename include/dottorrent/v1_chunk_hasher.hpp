@@ -13,11 +13,12 @@ class v1_chunk_hasher : public chunk_hasher
 public:
     using hash_type = sha1_hash;
 
-    v1_chunk_hasher(file_storage& storage, std::size_t thread_count);
+    explicit v1_chunk_hasher(file_storage& storage, std::size_t thread_count = 1);
 
 protected:
+    void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) override;
 
-    void hash_chunk(hasher& hasher, const data_chunk& chunk) override;
+    void hash_chunk(hasher& hasher, const data_chunk& chunk);
 
     virtual void process_piece_hash(std::size_t piece_idx,
                                     std::size_t file_idx,

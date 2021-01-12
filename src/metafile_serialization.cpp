@@ -225,26 +225,26 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
     return binfo;
 }
 
-bencode::bvalue make_bvalue_v1(const metafile& m)
+
+bencode::bvalue make_bvalue_common(const metafile& m)
 {
-    namespace bc = bencode;
+    // add first element of announce-url to announce for compatibility
     auto torrent = bc::bvalue(bc::btype::dict);
     auto& btorrent = get_dict(torrent);
-
-    // add first element of announce-url to announce for compatibility
 
     if (!m.trackers().empty()) {
         btorrent.insert_or_assign("announce", m.trackers()[0].url);
         btorrent.insert_or_assign("announce-url", m.trackers());
     }
-
     if (!m.comment().empty()) {
         btorrent.insert_or_assign("comment", m.comment());
     }
-
-    btorrent.insert_or_assign("created by", m.created_by());
-    btorrent.insert_or_assign("creation date", m.creation_date().count());
-
+    if (!m.created_by().empty()) {
+        btorrent.insert_or_assign("created by", m.created_by());
+    }
+    if (m.creation_date().count() != 0) {
+        btorrent.insert_or_assign("creation date", m.creation_date().count());
+    }
     if (!m.collections().empty()) {
         btorrent.insert_or_assign("collections", m.collections());
     }
@@ -263,6 +263,14 @@ bencode::bvalue make_bvalue_v1(const metafile& m)
     if (!m.dht_nodes().empty()) {
         btorrent.insert_or_assign("nodes", m.dht_nodes());
     }
+    return torrent;
+}
+
+bencode::bvalue make_bvalue_v1(const metafile& m)
+{
+    namespace bc = bencode;
+    auto torrent = make_bvalue_common(m);
+    auto& btorrent = get_dict(torrent);
 
     btorrent.insert_or_assign("info", make_bvalue_infodict_v1(m));
     return torrent;
@@ -271,42 +279,9 @@ bencode::bvalue make_bvalue_v1(const metafile& m)
 bencode::bvalue make_bvalue_v2(const dottorrent::metafile& m)
 {
     namespace bc = bencode;
-    auto torrent = bc::bvalue(bc::btype::dict);
+    auto torrent = make_bvalue_common(m);
     auto& btorrent = get_dict(torrent);
     const auto& storage = m.storage();
-
-    if (!m.trackers().empty()) {
-        btorrent.insert_or_assign("announce", m.trackers()[0].url);
-        btorrent.insert_or_assign("announce-url", m.trackers());
-    }
-
-    if (!m.comment().empty()) {
-        btorrent.insert_or_assign("comment", m.comment());
-    }
-
-    btorrent.insert_or_assign("created by", m.created_by());
-    btorrent.insert_or_assign("creation date", m.creation_date().count());
-    btorrent.insert_or_assign("name", m.name());
-    btorrent.insert_or_assign("private", m.is_private());
-
-    if (!m.collections().empty()) {
-        btorrent.insert_or_assign("collections", m.collections());
-    }
-    if (!m.http_seeds().empty()) {
-        btorrent.insert_or_assign("httpseeds", m.http_seeds());
-    }
-    if (!m.similar_torrents().empty()) {
-        btorrent.insert_or_assign("similar", m.similar_torrents());
-    }
-    if (!m.source().empty()) {
-        btorrent.insert_or_assign("source", m.source());
-    }
-    if (!m.web_seeds().empty()) {
-        btorrent.insert_or_assign("url-list", m.web_seeds());
-    }
-    if (!m.dht_nodes().empty()) {
-        btorrent.insert_or_assign("nodes", m.dht_nodes());
-    }
 
     // info dict
     btorrent.insert_or_assign("info", make_bvalue_infodict_v2(m));
@@ -333,39 +308,9 @@ bencode::bvalue make_bvalue_v2(const dottorrent::metafile& m)
 bencode::bvalue make_bvalue_hybrid(const metafile& m)
 {
     namespace bc = bencode;
-    auto torrent = bc::bvalue(bc::btype::dict);
+    auto torrent = make_bvalue_common(m);
     auto& btorrent = get_dict(torrent);
     const auto& storage = m.storage();
-
-    // add first element of announce-url to announce for compatibility
-    std::string announce = (!m.trackers().empty()) ? (m.trackers()[0].url) : "";
-
-    btorrent.insert_or_assign("announce", announce);
-    btorrent.insert_or_assign("announce-url", m.trackers());
-    btorrent.insert_or_assign("comment", m.comment());
-    btorrent.insert_or_assign("created by", m.created_by());
-    btorrent.insert_or_assign("creation date", m.creation_date().count());
-    btorrent.insert_or_assign("name", m.name());
-    btorrent.insert_or_assign("private", m.is_private());
-
-    if (!m.collections().empty()) {
-        btorrent.insert_or_assign("collections", m.collections());
-    }
-    if (!m.http_seeds().empty()) {
-        btorrent.insert_or_assign("httpseeds", m.http_seeds());
-    }
-    if (!m.similar_torrents().empty()) {
-        btorrent.insert_or_assign("similar", m.similar_torrents());
-    }
-    if (!m.source().empty()) {
-        btorrent.insert_or_assign("source", m.source());
-    }
-    if (!m.web_seeds().empty()) {
-        btorrent.insert_or_assign("url-list", m.web_seeds());
-    }
-    if (!m.dht_nodes().empty()) {
-        btorrent.insert_or_assign("nodes", m.dht_nodes());
-    }
 
     // info dict
     btorrent.insert_or_assign("info", make_bvalue_infodict_hybrid(m));

@@ -200,26 +200,29 @@ const std::string& metafile::source() const
 void metafile::set_source(std::string_view source)
 { source_ = source; }
 
-bool metafile::is_private() const
+bool metafile::is_private() const noexcept
 { return private_; }
 
-void metafile::set_private(bool flag)
+void metafile::set_private(bool flag) noexcept
 { private_ = flag; }
 
-const file_storage& metafile::storage() const
+const file_storage& metafile::storage() const noexcept
 { return storage_; }
 
-file_storage& metafile::storage()
+file_storage& metafile::storage() noexcept
 { return storage_; }
 
-std::size_t metafile::piece_size() const
+std::size_t metafile::piece_size() const noexcept
 { return storage_.piece_size(); }
 
-std::size_t metafile::piece_count() const
+std::size_t metafile::piece_count() const noexcept
 { return storage_.piece_count(); }
 
-std::size_t metafile::total_file_size() const
+std::size_t metafile::total_file_size() const noexcept
 { return storage_.total_file_size(); }
+
+std::size_t metafile::total_regular_file_size() const noexcept
+{ return storage_.total_regular_file_size(); }
 
 
 metafile read_metafile(std::istream& is)
