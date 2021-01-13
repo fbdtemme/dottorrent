@@ -1,41 +1,27 @@
 #pragma once
-#include <vector>
-#include <memory>
-#include <atomic>
-#include <thread>
-#include <ranges>
 
-#include <gsl-lite/gsl-lite.hpp>
-#include <tbb/concurrent_queue.h>
-
-#include "dottorrent/hash.hpp"
-#include "dottorrent/file_storage.hpp"
-#include "dottorrent/data_chunk.hpp"
+#include "dottorrent/chunk_processor.hpp"
 
 namespace dottorrent {
 
-namespace rng = std::ranges;
-
-class chunk_hasher
+class chunk_hasher : public chunk_processor
 {
 public:
-    using chunk_type = data_chunk;
-    using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
-
     explicit chunk_hasher(file_storage& storage, std::vector<hash_function> hf, std::size_t thread_count = 1)
             : storage_(storage)
             , threads_(thread_count)
             , queue_(std::make_shared<queue_type>())
-            , hash_functions_(hf)
+            , hash_functions_(std::move(hf))
     { }
 
     chunk_hasher(const chunk_hasher& other) = delete;
     chunk_hasher(chunk_hasher&& other) = delete;
+
     chunk_hasher& operator=(const chunk_hasher& other) = delete;
     chunk_hasher& operator=(chunk_hasher&& other) = delete;
 
     /// Start the worker threads
-    void start()
+    void start() override
     {
         Ensures(!started());
         Ensures(!cancelled());
@@ -48,13 +34,13 @@ public:
 
     /// Signal the workers to shut down after finishing all pending work.
     /// No items can be added to the work queue after this call.
-    void request_stop()
+    void request_stop() override
     {
         rng::for_each(threads_, [](std::jthread& t) { t.request_stop(); });
     }
 
     /// Signal the workers to shut down and discard pending work.
-    void request_cancellation()
+    void request_cancellation() override
     {
         cancelled_.store(true, std::memory_order_relaxed);
         request_stop();
@@ -62,7 +48,7 @@ public:
 
     /// Block until all workers finish their execution.
     /// Note that workers will only finish after a call to stop or cancel.
-    void wait()
+    void wait() override
     {
         if (!started()) return;
 
@@ -70,9 +56,9 @@ public:
         // tbb::concurrent_queue has negative size if pop() 's are pending.
         for (auto i = 0; i < 2 * threads_.size()+1; ++i) {
             queue_->push({
-                std::numeric_limits<std::uint32_t>::max(),
-                std::numeric_limits<std::uint32_t>::max(),
-                nullptr
+                    std::numeric_limits<std::uint32_t>::max(),
+                    std::numeric_limits<std::uint32_t>::max(),
+                    nullptr
             });
         }
 
@@ -83,7 +69,7 @@ public:
         }
     }
 
-    auto running() -> bool
+    bool running() const noexcept override
     {
         return started_.load(std::memory_order_relaxed) &&
                 !cancelled_.load(std::memory_order_relaxed) &&
@@ -105,7 +91,10 @@ public:
                 [](const auto& t) { return t.joinable(); }));
     }
 
-    auto get_queue() -> const std::shared_ptr<queue_type>&
+    std::shared_ptr<queue_type> get_queue() override
+    { return queue_; }
+
+    std::shared_ptr<const queue_type> get_queue() const override
     { return queue_; }
 
     /// Number of total bytes hashes.
@@ -115,6 +104,8 @@ public:
     /// Number of bytes processed.
     auto bytes_done() const noexcept -> std::size_t
     { return bytes_done_.load(std::memory_order_relaxed); }
+
+    virtual ~chunk_hasher() override = default;
 
 protected:
     virtual void run(int thread_idx)
@@ -169,6 +160,5 @@ protected:
     // How many pieces were processed (some pieces can be processed without hashing).
     std::atomic<std::size_t> bytes_done_ = 0;
 };
-
 
 } // namespace dottorrent

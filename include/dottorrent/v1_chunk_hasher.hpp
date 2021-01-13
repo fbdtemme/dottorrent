@@ -11,6 +11,7 @@ namespace dottorrent {
 class v1_chunk_hasher : public chunk_hasher
 {
 public:
+    using base_type = chunk_hasher;
     using hash_type = sha1_hash;
 
     explicit v1_chunk_hasher(file_storage& storage, std::size_t thread_count = 1);

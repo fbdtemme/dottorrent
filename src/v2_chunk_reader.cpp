@@ -27,12 +27,9 @@ void v2_chunk_reader::run()
         // handle pieces if the file does not exists. Used when verifying torrents.
         if (!fs::exists(file_path)) {
             auto file_size = file_entry.file_size();
-            auto n_pieces = (file_size + v2_block_size - 1) / v2_block_size;
-            for (std::size_t i = 0; i < n_pieces; ++i) {
-                push({static_cast<std::uint32_t>(i),
-                      static_cast<std::uint32_t>(file_index_),
-                      nullptr});
-            }
+            push({static_cast<std::uint32_t>(0),
+                  static_cast<std::uint32_t>(file_index_),
+                  nullptr});
             bytes_read_.fetch_add(file_size, std::memory_order_relaxed);
             ++file_index_;
             continue;
@@ -73,7 +70,6 @@ void v2_chunk_reader::run()
 
 
 void v2_chunk_reader::push(const data_chunk& chunk) {
-    Expects(chunk.data);
     Expects(0 <= chunk.piece_index && chunk.piece_index < storage_.get().piece_count());
 
     // hasher queues

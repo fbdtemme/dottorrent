@@ -14,7 +14,7 @@
 #include "dottorrent/file_storage.hpp"
 #include "dottorrent/data_chunk.hpp"
 #include "dottorrent/hash_function_traits.hpp"
-#include "dottorrent/chunk_hasher.hpp"
+#include "dottorrent/chunk_processor.hpp"
 #include "dottorrent/hasher/factory.hpp"
 
 namespace dottorrent {

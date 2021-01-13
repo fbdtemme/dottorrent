@@ -43,22 +43,6 @@ namespace fs = std::filesystem;
 using namespace dottorrent::literals;
 using namespace std::chrono_literals;
 
-struct storage_hasher_traits {
-
-    // total memory consumption = (piece_size * (queue_size + producer_buffer
-    //                                + (consumer_buffer * #consumer_threads) )
-
-    // Default memory usage per thread is 32 MiB.
-    static constexpr std::size_t min_memory = 8_MiB;
-    static constexpr std::size_t max_memory = 128_MiB;
-    static constexpr std::size_t memory_scale_factor = 3;
-
-    // The minimum size of a block to read from disk.
-    // For piece sizes smaller than the min_chunk_size multiple pieces
-    // will be read in a single block for faster disk I/O.
-    static constexpr std::size_t min_chunk_size = 1_MiB;
-};
-
 
 /// Options to control the memory usage of a storage_hasher.
 struct storage_hasher_options
@@ -149,7 +133,7 @@ private:
     std::size_t threads_;
 
     std::unique_ptr<chunk_reader> reader_;
-    std::unique_ptr<chunk_hasher> hasher_;
+    std::unique_ptr<chunk_processor> hasher_;
     std::vector<std::unique_ptr<checksum_hasher>> checksum_hashers_;
 
     bool started_ = false;

@@ -3,7 +3,7 @@
 namespace dottorrent
 {
 v1_chunk_hasher::v1_chunk_hasher(file_storage& storage, std::size_t thread_count)
-        : chunk_hasher(storage, {hash_function::sha1}, thread_count)
+        : base_type(storage, {hash_function::sha1}, thread_count)
 {}
 
 void v1_chunk_hasher::hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk)

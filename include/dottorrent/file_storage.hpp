@@ -151,6 +151,12 @@ public:
     std::size_t file_count() const
     { return files_.size(); }
 
+    // file count excluding padding files
+    std::size_t regular_file_count() const noexcept
+    {
+        return rng::count_if(files_, [](const file_entry& e) { return !e.is_padding_file(); });
+    };
+
     enum file_mode file_mode() const;
 
     /// Return the protocol version this storage object supports.
