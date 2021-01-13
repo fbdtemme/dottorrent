@@ -12,8 +12,6 @@ v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, bool v1_compatible, std:
         , add_v1_compatibility_(v1_compatible)
 {
     // SHA265 hash of 16 KiB of zero bytes.
-    static constexpr auto default_hash = make_hash_from_hex<sha256_hash>(
-            "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe");
     const auto& st = storage_.get();
     std::size_t file_count = 0;
 
@@ -28,7 +26,7 @@ v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, bool v1_compatible, std:
             merkle_trees_.emplace_back();
         }
         else {
-            merkle_trees_.emplace_back(block_count, default_hash);
+            merkle_trees_.emplace_back(block_count);
             v1_piece_offsets_.push_back(
                     v1_piece_offsets_.back()+(entry.file_size()+piece_size_-1)/piece_size_);
         }
@@ -61,7 +59,7 @@ void v2_chunk_hasher::hash_chunk(hasher& sha256_hasher, hasher& sha1_hasher, con
     const auto pieces_in_chunk = (chunk.data->size() + piece_size - 1) / piece_size;
     // number of 16 KiB blocks in a chunk
     const auto blocks_in_chunk = (chunk.data->size() + v2_block_size -1) / v2_block_size;
-    // index of 16 KiB chunks in the per file merkle tree
+    // index of first 16 KiB block in the per file merkle tree
     const auto index_offset = chunk.piece_index * piece_size_ / v2_block_size;
     const auto data = std::span(*chunk.data);
 
