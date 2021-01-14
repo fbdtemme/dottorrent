@@ -192,7 +192,10 @@ public:
 
     const sha1_hash& get_piece_hash(std::size_t index) const noexcept;
 
-    std::span<const sha1_hash> get_piece_hash_range(std::size_t file_index) const;
+    std::pair<std::size_t, std::size_t>
+    get_pieces_offsets(std::size_t file_index) const;
+
+    std::span<const sha1_hash> get_pieces_span(std::size_t file_index) const;
 
     /// Set the sha1 hash for the v1 piece with `index`
     /// thread safe when called for different values of `index`.

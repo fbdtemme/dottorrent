@@ -127,6 +127,10 @@ public:
 
     const std::vector<std::uint8_t>& result() const noexcept;
 
+    const double percentage(std::size_t file_index) const noexcept;
+
+    const double percentage(const file_entry& entry) const;
+
 private:
     std::reference_wrapper<file_storage> storage_;
     enum protocol protocol_;

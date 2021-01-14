@@ -184,21 +184,28 @@ bool file_storage::operator==(const file_storage& other) const {
                     (piece_size_ == other.piece_size_) );
 }
 
-std::span<const sha1_hash> file_storage::get_piece_hash_range(std::size_t file_index) const
+std::span<const sha1_hash> file_storage::get_pieces_span(std::size_t file_index) const
+{
+    Expects(file_index < file_count());
+    const auto [first, last] = get_pieces_offsets(file_index);
+    return std::span(pieces_).subspan(first, last-first);
+}
+
+
+std::pair<std::size_t, std::size_t> file_storage::get_pieces_offsets(std::size_t file_index) const
 {
     Expects(file_index < file_count());
 
     const auto& entry = at(file_index);
 
-    std::size_t cumulative_size = 0;
-    std::for_each(files_.begin(), std::next(files_.begin(), file_index),
-            [&](const file_entry& e) {
-                return cumulative_size + e.file_size();
-            });
+    std::size_t cumulative_size = std::transform_reduce(
+            files_.begin(), std::next(files_.begin(), file_index), 0ul,
+            std::plus<>{},
+            [&](const file_entry& e) { return e.file_size(); });
 
     auto offset = cumulative_size / piece_size_;
     auto count = (entry.file_size() + piece_size_ - 1) / piece_size_;
-    return std::span(pieces_).subspan(offset, count);
+    return {offset, offset+count};
 }
 
 void file_storage::set_piece_hash(std::size_t index, const sha1_hash& hash)
