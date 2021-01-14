@@ -1,3 +1,4 @@
+#ifdef DOTTORRENT_USE_OPENSSL
 #include <system_error>
 #include "dottorrent/hasher/backends/openssl.hpp"
 
@@ -10,3 +11,4 @@ const std::error_category& openssl_crypto_category()
 }
 
 }
+#endif
