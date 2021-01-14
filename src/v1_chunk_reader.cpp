@@ -22,6 +22,7 @@ void v1_chunk_reader::run()
         // handle pieces if the file does not exists. Used when verifying torrents.
         if (!fs::exists(file_path) || file_entry.is_padding_file()) {
             handle_missing_file();
+            ++file_index_;
             continue;
         }
 
@@ -63,10 +64,14 @@ void v1_chunk_reader::run()
     // push last possibly partial chunk
     if (chunk_offset_ != 0) {
         chunk_->resize(chunk_offset_);
+        std::size_t pieces_in_chunk = (chunk_offset_ + piece_size -1) / piece_size;
         push({static_cast<std::uint32_t>(piece_index_),
               static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
               std::move(chunk_)});
+        piece_index_ += pieces_in_chunk;
     }
+
+    Ensures(piece_index_ == storage.piece_count());
 }
 
 void v1_chunk_reader::handle_missing_file()
@@ -91,6 +96,7 @@ void v1_chunk_reader::handle_missing_file()
         // resize chunk to the number of pieces it contains
         chunk_offset_ += bytes_to_fill;
         missing_file_size -= bytes_to_fill;
+        piece_index_ += chunk_offset_ / piece_size;
 
         // if the chunk is complete filled -> push it
         if (chunk_offset_ == chunk_size_) {
@@ -105,16 +111,13 @@ void v1_chunk_reader::handle_missing_file()
             // clear chunk and file offsets
             chunk_offset_ = 0;
             file_offsets_.clear();
-            // increment chunk index
-            piece_index_ += pieces_per_chunk;
         }
     }
 
     // advance piece index to the first piece that contains data from a new file.
     // push an empty chunk per piece to make hashers aware that these pieces are done,
-    // but they do not require any work
+    // but they do not require any workthese
     auto first_new_piece_index = piece_index_ + missing_file_size / piece_size;
-    auto first_piece_index_of_new_chunk = first_new_piece_index - (first_new_piece_index % pieces_per_chunk);
     missing_file_size -= piece_size * (first_new_piece_index - piece_index_);
 
     for (; piece_index_ < first_new_piece_index; ++piece_index_) {
