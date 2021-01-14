@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
 
-find_package(Catch2 REQUIRED)
 include(Catch)
 
 add_executable(dottorrent-tests
