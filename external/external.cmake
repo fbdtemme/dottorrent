@@ -61,7 +61,7 @@ else()
     FetchContent_Declare(
             Catch2
             GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-            GIT_TAG        master
+            GIT_TAG        v2.x
     )
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH "${Catch2_SOURCE_DIR}/contrib")
