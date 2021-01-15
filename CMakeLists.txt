@@ -89,7 +89,7 @@ if (DOTTORRENT_BUILD_COVERAGE)
     set(CMAKE_C_FLAGS --coverage)
 endif()
 
-if ((BUILD_TESTING AND DOTTORRENT_BUILD_TESTS) OR DOTTORRENT_BUILD_TESTS)
+if (DOTTORRENT_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
