@@ -15,8 +15,8 @@ include(GNUInstallDirs)
 option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
 option(DOTTORRENT_BUILD_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
-    "The cryptographic library to link agains. Options are: openssl"
-)
+                          "The cryptographic library to link agains. Options are: openssl")
+option(DOTTORRENT_INSTALL "Generate an install target" ON)
 
 # add cmake directory for Find* modules
 cmake_policy(SET CMP0076 NEW)
@@ -94,55 +94,55 @@ if ((BUILD_TESTING AND DOTTORRENT_BUILD_TESTS) OR DOTTORRENT_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-set(dottorrent_cmake_install_dir          ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-set(dottorrent_cmake_install_modules_dir  ${dottorrent_cmake_install_dir}/Modules)
-set(dottorrent_version_config             ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake)
-set(dottorrent_project_config             ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake)
-set(dottorrent_targets_export_name        ${PROJECT_NAME}-targets)
-set(dottorrent_targets_file               ${dottorrent_targets_export_name}.cmake)
-set(dottorrent_include_build_dir          ${PROJECT_SOURCE_DIR}/include/)
+if (DOTTORRENT_INSTALL)
+    set(dottorrent_cmake_install_dir          ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+    set(dottorrent_cmake_install_modules_dir  ${dottorrent_cmake_install_dir}/Modules)
+    set(dottorrent_version_config             ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake)
+    set(dottorrent_project_config             ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config.cmake)
+    set(dottorrent_targets_export_name        ${PROJECT_NAME}-targets)
+    set(dottorrent_targets_file               ${dottorrent_targets_export_name}.cmake)
+    set(dottorrent_include_build_dir          ${PROJECT_SOURCE_DIR}/include/)
 
-include(CMakePackageConfigHelpers)
+    include(CMakePackageConfigHelpers)
 
-write_basic_package_version_file(
-        ${dottorrent_version_config}
-        VERSION ${PACKAGE_VERSION}
-        COMPATIBILITY AnyNewerVersion
-)
-configure_package_config_file(
-        ${PROJECT_SOURCE_DIR}/cmake/dottorrent-config.cmake.in
-        ${dottorrent_project_config}
-        INSTALL_DESTINATION ${dottorrent_cmake_install_dir})
-
-
-# install project config file and config version file
-install(FILES ${dottorrent_project_config}
-        ${dottorrent_version_config}
-        DESTINATION ${dottorrent_cmake_install_dir}
-        )
-
-# install FindTBB.cmake
-install(FILES cmake/Modules/FindTBB.cmake
-        DESTINATION ${dottorrent_cmake_install_modules_dir})
-
-# install public headers
-install(DIRECTORY ${dottorrent_public_include_dir} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-# install targets to an export set
-install(TARGETS dottorrent
-        EXPORT   ${dottorrent_targets_export_name}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-# Install the export set to ena ble importing targets from the build tree
-export(EXPORT ${dottorrent_targets_export_name}
-        FILE ${dottorrent_targets_file}
-        NAMESPACE ${PROJECT_NAME}::)
-
-# Install the export set to enable importing targets from the install tree
-install(EXPORT ${dottorrent_targets_export_name}
-        FILE ${dottorrent_targets_file}
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${dottorrent_cmake_install_dir})
+    write_basic_package_version_file(
+            ${dottorrent_version_config}
+            VERSION ${PACKAGE_VERSION}
+            COMPATIBILITY AnyNewerVersion
+    )
+    configure_package_config_file(
+            ${PROJECT_SOURCE_DIR}/cmake/dottorrent-config.cmake.in
+            ${dottorrent_project_config}
+            INSTALL_DESTINATION ${dottorrent_cmake_install_dir})
 
 
+    # install project config file and config version file
+    install(FILES ${dottorrent_project_config}
+            ${dottorrent_version_config}
+            DESTINATION ${dottorrent_cmake_install_dir}
+            )
+
+    # install FindTBB.cmake
+    install(FILES cmake/Modules/FindTBB.cmake
+            DESTINATION ${dottorrent_cmake_install_modules_dir})
+
+    # install public headers
+    install(DIRECTORY ${dottorrent_public_include_dir} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+    # install targets to an export set
+    install(TARGETS dottorrent
+            EXPORT   ${dottorrent_targets_export_name}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+    # Install the export set to ena ble importing targets from the build tree
+    export(EXPORT ${dottorrent_targets_export_name}
+            FILE ${dottorrent_targets_file}
+            NAMESPACE ${PROJECT_NAME}::)
+
+    # Install the export set to enable importing targets from the install tree
+    install(EXPORT ${dottorrent_targets_export_name}
+            FILE ${dottorrent_targets_file}
+            NAMESPACE ${PROJECT_NAME}::
+            DESTINATION ${dottorrent_cmake_install_dir})
+endif()
