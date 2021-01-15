@@ -122,7 +122,7 @@ install(FILES ${dottorrent_project_config}
         )
 
 # install FindTBB.cmake
-install(FILES cmake/Modules/FindTBB.cmake cmake/Modules/FindGCrypt.cmake
+install(FILES cmake/Modules/FindTBB.cmake
         DESTINATION ${dottorrent_cmake_install_modules_dir})
 
 # install public headers
