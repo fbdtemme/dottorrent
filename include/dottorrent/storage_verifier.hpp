@@ -33,7 +33,7 @@
 
 #include "dottorrent/hash.hpp"
 #include "dottorrent/checksum.hpp"
-#include "dottorrent/checksum_hasher.hpp"
+#include "dottorrent/v1_checksum_hasher.hpp"
 
 
 
@@ -140,7 +140,7 @@ private:
 
     std::unique_ptr<chunk_reader> reader_;
     std::unique_ptr<chunk_verifier> verifier_;
-    std::vector<std::unique_ptr<checksum_hasher>> checksum_hashers_;
+    std::vector<std::unique_ptr<v1_checksum_hasher>> checksum_hashers_;
 
     bool started_ = false;
     bool stopped_ = false;

@@ -20,7 +20,7 @@ struct checksum
     virtual auto value() const -> std::span<const std::byte> = 0;
     virtual auto value() -> std::span<std::byte> = 0;
 
-    virtual auto hex_string() -> std::string
+    virtual auto hex_string() const -> std::string
     {
         return to_hexadecimal_string(value());
     }

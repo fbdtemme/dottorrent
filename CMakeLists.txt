@@ -32,13 +32,17 @@ add_library(dottorrent
         src/v1_chunk_hasher.cpp
         src/v1_chunk_reader.cpp
         src/v1_chunk_verifier.cpp
+        src/v1_checksum_hasher.cpp
         src/v2_chunk_reader.cpp
         src/v2_chunk_hasher.cpp
         src/v2_chunk_verifier.cpp
+        src/v2_checksum_hasher.cpp
         src/hasher/backends/openssl.cpp
         src/hasher/backends/gcrypt.cpp
         src/storage_verifier.cpp
         include/dottorrent/chunk_verifier.hpp)
+
+
 add_library(dottorrent::dottorrent ALIAS dottorrent)
 
 target_compile_features(dottorrent PUBLIC cxx_std_20)

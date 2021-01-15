@@ -19,21 +19,16 @@
 #include <gsl-lite/gsl-lite.hpp>
 #include <tbb/concurrent_queue.h>
 
-#include <dottorrent/object_pool.hpp>
 
 #include "dottorrent/literals.hpp"
 #include "dottorrent/file_entry.hpp"
 #include "dottorrent/file_storage.hpp"
 
 #include "dottorrent/data_chunk.hpp"
-#include "dottorrent/v1_chunk_reader.hpp"
-#include "dottorrent/v2_chunk_reader.hpp"
-#include "dottorrent/v1_chunk_hasher.hpp"
-#include "dottorrent/v2_chunk_hasher.hpp"
-
 #include "dottorrent/hash.hpp"
 #include "dottorrent/checksum.hpp"
-#include "dottorrent/checksum_hasher.hpp"
+#include "dottorrent/chunk_reader.hpp"
+#include "dottorrent/chunk_hasher.hpp"
 
 
 
@@ -134,7 +129,7 @@ private:
 
     std::unique_ptr<chunk_reader> reader_;
     std::unique_ptr<chunk_processor> hasher_;
-    std::vector<std::unique_ptr<checksum_hasher>> checksum_hashers_;
+    std::vector<std::unique_ptr<chunk_processor>> checksum_hashers_;
 
     bool started_ = false;
     bool stopped_ = false;

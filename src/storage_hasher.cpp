@@ -2,7 +2,14 @@
 // Created by fbdtemme on 9/11/20.
 //
 #include <bit>
+
 #include "dottorrent/storage_hasher.hpp"
+#include "dottorrent/v1_chunk_reader.hpp"
+#include "dottorrent/v2_chunk_reader.hpp"
+#include "dottorrent/v1_chunk_hasher.hpp"
+#include "dottorrent/v2_chunk_hasher.hpp"
+#include <dottorrent/v1_checksum_hasher.hpp>
+#include <dottorrent/v2_checksum_hasher.hpp>
 
 
 namespace dottorrent {
@@ -68,21 +75,24 @@ void storage_hasher::start() {
         reader_ = std::make_unique<v2_chunk_reader>(storage_, chunk_size, memory_.max_memory);
     }
 
-    // add file checksums hashers and register them with the reader
-
-    for (auto algo : checksums_) {
-        auto& h = checksum_hashers_.emplace_back(std::make_unique<checksum_hasher>(storage_, algo));
-        reader_->register_checksum_queue(h->get_queue());
-    }
-
     // add piece hashers and register them with the reader
 
     if (protocol_ == protocol::v1) {
         hasher_ = std::make_unique<v1_chunk_hasher>(storage_, threads_);
         reader_->register_hash_queue(hasher_->get_queue());
+
+        for (auto algo : checksums_) {
+            auto& h = checksum_hashers_.emplace_back(std::make_unique<v1_checksum_hasher>(storage_, algo));
+            reader_->register_checksum_queue(h->get_queue());
+        }
     } else {
         hasher_ = std::make_unique<v2_chunk_hasher>(storage_, protocol_ == protocol::hybrid, threads_);
         reader_->register_hash_queue(hasher_->get_queue());
+
+        for (auto algo : checksums_) {
+            auto& h = checksum_hashers_.emplace_back(std::make_unique<v2_checksum_hasher>(storage_, algo));
+            reader_->register_checksum_queue(h->get_queue());
+        }
     }
 
     // start all parts
