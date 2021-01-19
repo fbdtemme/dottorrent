@@ -6,9 +6,9 @@
 #include <type_traits>
 #include <cassert>
 
-#include <tbb/concurrent_queue.h>
+#include "dottorrent/mpmcqueue.hpp"
 
-namespace pool {
+namespace dottorrent::pool {
 
 template <typename T>
     requires std::is_default_constructible<T>::value
@@ -34,7 +34,7 @@ public:
     using value_type = T;
     using value_ptr = std::shared_ptr<value_type>;
     using size_type = std::ptrdiff_t ;
-    using queue_type = tbb::concurrent_bounded_queue<value_ptr>;
+    using queue_type = rigtorp::mpmc::Queue<value_ptr>;
 
 public:
     /// Default constructor, we only want this to be available
@@ -96,18 +96,15 @@ private:
     {
         /// @copydoc shared_object_pool::shared_object_pool()
         explicit impl(size_type capacity)
-            : queue_()
+            : queue_(capacity)
             , resources_left_(capacity)
-        {
-            queue_.set_capacity(capacity);
-        }
+        {}
 
         explicit impl(size_type capacity, size_type size)
-            : queue_()
+            : queue_(capacity)
             , resources_left_(capacity - size)
         {
             assert(capacity >= size);
-            queue_.set_capacity(capacity);
 
             for (size_type i = 0; i != size; ++i) {
                 queue_.emplace(std::invoke(Policy::construct));
@@ -276,4 +273,4 @@ private:
     std::shared_ptr<impl> pool_;
 };
 
-} // namespace pool
+} // namespace dottorrent::pool

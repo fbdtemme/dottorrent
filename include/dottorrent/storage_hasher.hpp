@@ -17,8 +17,6 @@
 #include <unordered_set>
 
 #include <gsl-lite/gsl-lite.hpp>
-#include <tbb/concurrent_queue.h>
-
 
 #include "dottorrent/literals.hpp"
 #include "dottorrent/file_entry.hpp"

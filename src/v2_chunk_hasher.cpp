@@ -5,8 +5,8 @@
 
 namespace dottorrent {
 
-v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, bool v1_compatible, std::size_t thread_count)
-        : base_type(storage, {hash_function::sha1, hash_function::sha256}, thread_count)
+v2_chunk_hasher::v2_chunk_hasher(file_storage& storage, std::size_t capacity, bool v1_compatible, std::size_t thread_count)
+        : base_type(storage, {hash_function::sha1, hash_function::sha256}, capacity, thread_count)
         , piece_size_(storage.piece_size())
         , file_bytes_hashed_()
         , add_v1_compatibility_(v1_compatible)

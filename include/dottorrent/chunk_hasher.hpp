@@ -7,10 +7,13 @@ namespace dottorrent {
 class chunk_hasher : public chunk_processor
 {
 public:
-    explicit chunk_hasher(file_storage& storage, std::vector<hash_function> hf, std::size_t thread_count = 1)
+    explicit chunk_hasher(file_storage& storage,
+                         std::vector<hash_function> hf,
+                         std::size_t capacity,
+                         std::size_t thread_count = 1)
             : storage_(storage)
             , threads_(thread_count)
-            , queue_(std::make_shared<queue_type>())
+            , queue_(std::make_shared<queue_type>(capacity))
             , hash_functions_(std::move(hf))
     { }
 
@@ -53,7 +56,6 @@ public:
         if (!started()) return;
 
         // Wake up all threads with a poison pill if they are blocked on pop()
-        // tbb::concurrent_queue has negative size if pop() 's are pending.
         for (auto i = 0; i < 2 * threads_.size()+1; ++i) {
             queue_->push({
                     std::numeric_limits<std::uint32_t>::max(),
@@ -62,6 +64,7 @@ public:
             });
         }
 
+        // should all be finished by now
         for (auto& t : threads_) {
             if (t.joinable()) {
                 t.join();
@@ -123,8 +126,12 @@ protected:
         while (!stop_token.stop_requested() && stop_token.stop_possible()) {
             queue_->pop(item);
             // check if the data_chunk is valid or a stop wake-up signal
-            if (item.data == nullptr && item.piece_index == -1 && item.file_index == -1) {
-                continue;
+            if (item.data == nullptr &&
+                item.piece_index == std::numeric_limits<std::uint32_t>::max() &&
+                item.file_index == std::numeric_limits<std::uint32_t>::max())
+            {
+                Ensures(stop_token.stop_requested());
+                break;
             }
 
             hash_chunk(hashers, item);

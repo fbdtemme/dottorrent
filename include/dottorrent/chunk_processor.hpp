@@ -6,8 +6,7 @@
 #include <ranges>
 
 #include <gsl-lite/gsl-lite.hpp>
-#include <tbb/concurrent_queue.h>
-
+#include "dottorrent/mpmcqueue.hpp"
 #include "dottorrent/hash.hpp"
 #include "dottorrent/file_storage.hpp"
 #include "dottorrent/data_chunk.hpp"
@@ -20,7 +19,7 @@ class chunk_processor
 {
 public:
     using chunk_type = data_chunk;
-    using queue_type = tbb::concurrent_bounded_queue<chunk_type>;
+    using queue_type = rigtorp::mpmc::Queue<chunk_type>;
 
     /// Start the worker threads
     virtual void start() = 0;

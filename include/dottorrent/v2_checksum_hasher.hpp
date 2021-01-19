@@ -27,7 +27,7 @@ class v2_checksum_hasher : public chunk_hasher
     using base_type = chunk_hasher;
 public:
 
-    explicit v2_checksum_hasher(file_storage& storage, hash_function f);
+    explicit v2_checksum_hasher(file_storage& storage, hash_function f, std::size_t capacity);
 
 protected:
     void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk);

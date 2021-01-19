@@ -16,7 +16,7 @@ class v2_chunk_hasher : public chunk_hasher
 public:
     using base_type = chunk_hasher;
 
-    explicit v2_chunk_hasher(file_storage& storage, bool v1_compatible = false, std::size_t thread_count = 1);
+    explicit v2_chunk_hasher(file_storage& storage, std::size_t capacity, bool v1_compatible = false, std::size_t thread_count = 1);
 
 protected:
     void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) override;

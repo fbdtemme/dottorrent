@@ -76,21 +76,25 @@ void storage_hasher::start() {
     }
 
     // add piece hashers and register them with the reader
+    std::size_t queue_capacity =  memory_.max_memory / chunk_size;
 
     if (protocol_ == protocol::v1) {
-        hasher_ = std::make_unique<v1_chunk_hasher>(storage_, threads_);
+        hasher_ = std::make_unique<v1_chunk_hasher>(storage_, queue_capacity, threads_);
         reader_->register_hash_queue(hasher_->get_queue());
 
         for (auto algo : checksums_) {
-            auto& h = checksum_hashers_.emplace_back(std::make_unique<v1_checksum_hasher>(storage_, algo));
+            auto& h = checksum_hashers_.emplace_back(
+                    std::make_unique<v1_checksum_hasher>(storage_, algo, queue_capacity));
             reader_->register_checksum_queue(h->get_queue());
         }
     } else {
-        hasher_ = std::make_unique<v2_chunk_hasher>(storage_, protocol_ == protocol::hybrid, threads_);
+        hasher_ = std::make_unique<v2_chunk_hasher>(
+                storage_, queue_capacity, protocol_ == protocol::hybrid, threads_);
         reader_->register_hash_queue(hasher_->get_queue());
 
         for (auto algo : checksums_) {
-            auto& h = checksum_hashers_.emplace_back(std::make_unique<v2_checksum_hasher>(storage_, algo));
+            auto& h = checksum_hashers_.emplace_back(
+                    std::make_unique<v2_checksum_hasher>(storage_, algo, queue_capacity));
             reader_->register_checksum_queue(h->get_queue());
         }
     }

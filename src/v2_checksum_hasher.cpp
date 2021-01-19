@@ -3,8 +3,8 @@
 
 namespace dottorrent {
 
-v2_checksum_hasher::v2_checksum_hasher(file_storage& storage, hash_function f)
-        : base_type(storage, {f}, 1)
+v2_checksum_hasher::v2_checksum_hasher(file_storage& storage, hash_function f, std::size_t capacity)
+        : base_type(storage, {f}, capacity, 1)
 {}
 
 void v2_checksum_hasher::hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) {

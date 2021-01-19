@@ -6,7 +6,6 @@
 #include <thread>
 #include <vector>
 
-#include <tbb/concurrent_queue.h>
 #include <gsl-lite/gsl-lite.hpp>
 
 #include "dottorrent/chunk_hasher.hpp"

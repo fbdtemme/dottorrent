@@ -63,8 +63,6 @@ endif()
 include(external/external.cmake)
 
 find_package(Threads REQUIRED)
-find_package(TBB REQUIRED)
-
 
 target_include_directories(dottorrent PUBLIC
         $<INSTALL_INTERFACE:include>
@@ -77,11 +75,10 @@ set(dottorrent_public_include_dir  ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT
 target_link_libraries(dottorrent
     PUBLIC
         bencode::bencode
-        TBB::tbb
         Threads::Threads
-        fmt::fmt
+        fmt::fmt-header-only
         gsl::gsl-lite-v1
-        )
+    )
 
 if (DOTTORRENT_BUILD_COVERAGE)
     message(STATUS "Building with coverage enabled")
@@ -90,7 +87,6 @@ if (DOTTORRENT_BUILD_COVERAGE)
 endif()
 
 if (DOTTORRENT_BUILD_TESTS)
-    enable_testing()
     add_subdirectory(tests)
 endif()
 
@@ -121,10 +117,6 @@ if (DOTTORRENT_INSTALL)
             ${dottorrent_version_config}
             DESTINATION ${dottorrent_cmake_install_dir}
             )
-
-    # install FindTBB.cmake
-    install(FILES cmake/Modules/FindTBB.cmake
-            DESTINATION ${dottorrent_cmake_install_modules_dir})
 
     # install public headers
     install(DIRECTORY ${dottorrent_public_include_dir} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

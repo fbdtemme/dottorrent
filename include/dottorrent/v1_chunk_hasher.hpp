@@ -14,7 +14,7 @@ public:
     using base_type = chunk_hasher;
     using hash_type = sha1_hash;
 
-    explicit v1_chunk_hasher(file_storage& storage, std::size_t thread_count = 1);
+    explicit v1_chunk_hasher(file_storage& storage, std::size_t capacity, std::size_t thread_count = 1);
 
 protected:
     void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) override;
