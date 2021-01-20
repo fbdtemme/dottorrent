@@ -28,7 +28,7 @@ v2_chunk_verifier::v2_chunk_verifier(file_storage& storage, std::size_t thread_c
         }
         else {
             auto& m = merkle_trees_.emplace_back(block_count);
-            auto offset = std::max(1ul, entry.piece_layer().size());
+            auto offset = std::max(1ull, entry.piece_layer().size());
             file_offsets_.push_back(file_offsets_.back() + offset);
         }
     }
@@ -181,7 +181,7 @@ const double v2_chunk_verifier::percentage(std::size_t file_index) const noexcep
     auto first_piece_map_index = std::transform_reduce(
             storage.begin(), std::next(storage.begin(), file_index),
             0ul, std::plus<>{},
-            [](const file_entry& e) { return std::max(1ul, e.piece_layer().size()); });
+            [](const file_entry& e) { return std::max(1ull, e.piece_layer().size()); });
 
     auto n_complete_pieces = std::count(
             std::next(piece_map_.begin(), first_piece_map_index),

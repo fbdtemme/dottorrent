@@ -91,7 +91,7 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
                 ptr = &get_dict(it->second);
             }
             else {
-                auto [it2, suc] = ptr->insert_or_assign(component, bc::bvalue(bc::btype::dict));
+                auto [it2, suc] = ptr->insert_or_assign(component.string(), bc::bvalue(bc::btype::dict));
                 ptr = &get_dict(it2->second);
             }
         }
@@ -182,7 +182,7 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
                 ptr = &get_dict(it->second);
             }
             else {
-                auto [it2, suc] = ptr->insert_or_assign(component, bc::bvalue(bc::btype::dict));
+                auto [it2, suc] = ptr->insert_or_assign(component.string(), bc::bvalue(bc::btype::dict));
                 ptr = &get_dict(it2->second);
             }
         }

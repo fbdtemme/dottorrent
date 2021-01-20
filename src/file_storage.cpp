@@ -262,7 +262,7 @@ std::size_t directory_count(const file_storage& storage, const fs::path& root, b
         auto last = std::next(f.path().end(), -1);
 
         while (it != last) {
-            directories.emplace(current_dir / *it);
+            directories.emplace((current_dir / *it).string());
             it++;
         }
     }
@@ -310,7 +310,7 @@ std::vector<std::size_t> inclusive_file_size_scan_v2(const file_storage& storage
 
     std::transform_inclusive_scan(
             storage.begin(), storage.end(), std::back_inserter(res), std::plus<>{},
-            [&](const file_entry& e) {
+            [&](const file_entry& e) -> std::size_t {
                 // v2 padding for hybrid torrents is implicit, padding files are not counted in progress
                 if (e.is_padding_file()) { return 0ul; }
                 return e.file_size();
