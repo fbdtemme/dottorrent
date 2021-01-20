@@ -141,8 +141,7 @@ struct discard_output_iterator
 
 inline bool is_hidden_file([[maybe_unused]] const std::filesystem::path& path) {
 #if defined(_WIN32)
-    const wchar_t* file = path.string().c_str(); // To avoid incompatibility
-    int attr = GetFileAttributes(file);
+    int attr = GetFileAttributesW(path.c_str());
     return (attr & FILE_ATTRIBUTE_HIDDEN == 0);
 #else
     return false;
