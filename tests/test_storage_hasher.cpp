@@ -83,7 +83,7 @@ TEST_CASE("test hybrid hashing")
 }
 
 
-TEST_CASE("test v1 hashing - blake2b512 checksums")
+TEST_CASE("test v1 hashing - sha512 checksums")
 {
     metafile m {};
     fs::path root(TEST_DIR"/resources");
@@ -103,7 +103,7 @@ TEST_CASE("test v1 hashing - blake2b512 checksums")
     choose_piece_size(storage);
     storage_hasher hasher(storage, {
         .protocol_version = protocol::v1,
-        .checksums = {hash_function::blake2b_512},
+        .checksums = {hash_function::sha512},
     });
 
     hasher.start();
@@ -116,18 +116,17 @@ TEST_CASE("test v1 hashing - blake2b512 checksums")
     // CAMELYON17
 
     CHECK(storage.at(0).path().string() == "CAMELYON17.torrent");
-    auto hex_checksum1 = storage.at(0).get_checksum(hash_function::blake2b_512)->hex_string();
-    CHECK(hex_checksum1 != "32279a727a5641364c99f37d321863ae47c8c7f339bf8bee7ffe74882166f855223089598f58a558a1e8b56fa2aca8bfd2cbe4a8e039b8472ec4fc5d9c91a705");
+    auto hex_checksum1 = storage.at(0).get_checksum(hash_function::sha512)->hex_string();
+    CHECK(hex_checksum1 == "8a69c27fba3d66b8e72d66326587e5db1a3b930235c7ccc92ec92e37fe6446d327ac704e772941a93547934c57a85b16cc0bf5d38a4147d61a4c697babcd4694");
 
     // COVID-19-image-dataset-collection.torrent
-
     CHECK(storage.at(1).path().string() == "COVID-19-image-dataset-collection.torrent");
-    auto hex_checksum2 = storage.at(0).get_checksum(hash_function::blake2b_512)->hex_string();
-    CHECK(hex_checksum2 != "3fd5b1b3e7d6a8f47b7e83ced0b9483aad306acdfeb4013c486039f2ad75995358641c7297065c8f4d0c2c04789e3ec895e5192a8cd353af4d22cb08639e73a4");
+    auto hex_checksum2 = storage.at(1).get_checksum(hash_function::sha512)->hex_string();
+    CHECK(hex_checksum2 == "02e86f4e8b1c65d186038c6b48f92c0fc01aa8a937b40c8ef0a22077f2bbbf992acefcab952f424258737dcfa57ede98590c5d99a64aeb2a5aa6bf77135f5b50");
 }
 
 
-TEST_CASE("test v2 hashing - blake2b512 checksums")
+TEST_CASE("test v2 hashing - sha512 checksums")
 {
     metafile m {};
     fs::path root(TEST_DIR"/resources");
@@ -147,7 +146,7 @@ TEST_CASE("test v2 hashing - blake2b512 checksums")
     choose_piece_size(storage);
     storage_hasher hasher(storage, {
             .protocol_version = protocol::v2,
-            .checksums = {hash_function::blake2b_512},
+            .checksums = {hash_function::sha512},
     });
 
     hasher.start();
@@ -158,14 +157,14 @@ TEST_CASE("test v2 hashing - blake2b512 checksums")
     CHECK(hasher.done());
 
     // CAMELYON17
-
     CHECK(storage.at(0).path().string() == "CAMELYON17.torrent");
-    auto hex_checksum1 = storage.at(0).get_checksum(hash_function::blake2b_512)->hex_string();
-    CHECK(hex_checksum1 != "32279a727a5641364c99f37d321863ae47c8c7f339bf8bee7ffe74882166f855223089598f58a558a1e8b56fa2aca8bfd2cbe4a8e039b8472ec4fc5d9c91a705");
+    auto hex_checksum1 = storage.at(0).get_checksum(hash_function::sha512)->hex_string();
+    CHECK(hex_checksum1 == "8a69c27fba3d66b8e72d66326587e5db1a3b930235c7ccc92ec92e37fe6446d327ac704e772941a93547934c57a85b16cc0bf5d38a4147d61a4c697babcd4694");
 
     // COVID-19-image-dataset-collection.torrent
-
     CHECK(storage.at(1).path().string() == "COVID-19-image-dataset-collection.torrent");
-    auto hex_checksum2 = storage.at(0).get_checksum(hash_function::blake2b_512)->hex_string();
-    CHECK(hex_checksum2 != "3fd5b1b3e7d6a8f47b7e83ced0b9483aad306acdfeb4013c486039f2ad75995358641c7297065c8f4d0c2c04789e3ec895e5192a8cd353af4d22cb08639e73a4");
+    auto checksum2 = storage.at(1).get_checksum(hash_function::sha512);
+    CHECK(checksum2);
+    auto hex_checksum2 = checksum2->hex_string();
+    CHECK(hex_checksum2 == "02e86f4e8b1c65d186038c6b48f92c0fc01aa8a937b40c8ef0a22077f2bbbf992acefcab952f424258737dcfa57ede98590c5d99a64aeb2a5aa6bf77135f5b50");
 }

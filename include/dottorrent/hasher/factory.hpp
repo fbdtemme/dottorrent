@@ -8,11 +8,12 @@
 #ifdef DOTTORRENT_USE_OPENSSL
 #include "dottorrent/hasher/openssl_hasher.hpp"
 #endif
-
 #ifdef DOTTORRENT_USE_GCRYPT
 #include "dottorrent/hasher/gcrypt_hasher.hpp"
 #endif
-
+#ifdef DOTTORRENT_USE_WINCNG
+#include "dottorrent/hasher/wincng_hasher.hpp"
+#endif
 
 namespace dottorrent {
 
@@ -23,6 +24,8 @@ inline std::unique_ptr<hasher> make_hasher(hash_function f)
     return std::make_unique<openssl_hasher>(f);
 #elif defined(DOTTORRENT_USE_GCRYPT)
     return std::make_unique<gcrypt_hasher>(f);
+#elif defined(DOTTORRENT_USE_WINCNG)
+    return std::make_unique<wincng_hasher>(f);
 #else
     #error "No cryptographic library specified"
 #endif
@@ -38,6 +41,8 @@ make_hash(std::span<const std::byte> data)
     auto hasher = std::make_unique<openssl_hasher>(F);
 #elif defined(DOTTORRENT_USE_GCRYPT)
     auto hasher = std::make_unique<gcrypt_hasher>(F);
+#elif defined(DOTTORRENT_USE_WINCNG)
+    auto hasher = std::make_unique<wincng_hasher>(F);
 #else
     #error "No cryptographic library specified"
 #endif

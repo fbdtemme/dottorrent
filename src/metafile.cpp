@@ -293,7 +293,7 @@ void write_metafile_to(std::ostream& os, const metafile& m, protocol protocol_ve
 
 metafile load_metafile(const std::filesystem::path& path)
 {
-    std::ifstream ifs(path);
+    std::ifstream ifs(path, std::ios::binary);
     auto buffer = std::string(
             std::istreambuf_iterator{ifs},
             std::istreambuf_iterator<char>{});
@@ -304,7 +304,7 @@ metafile load_metafile(const std::filesystem::path& path)
 
 void save_metafile(const std::filesystem::path& path, const metafile& m, protocol protocol_version)
 {
-    std::ofstream ofs(path);
+    std::ofstream ofs(path, std::ios::binary);
     write_metafile_to(ofs, m, protocol_version);
 }
 

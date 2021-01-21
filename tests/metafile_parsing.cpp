@@ -15,7 +15,7 @@ struct torrent_fixture
 {
     torrent_fixture(fs::path path)
     {
-        auto is = std::ifstream(path);
+        auto is = std::ifstream(path, std::ifstream::binary);
         buffer = std::string(std::istreambuf_iterator<char>{is},
                 std::istreambuf_iterator<char>{});
         descriptors = bencode::decode_view(buffer);
