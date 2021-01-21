@@ -26,6 +26,14 @@ target_include_directories(dottorrent-tests PRIVATE ../src)
 target_compile_definitions(dottorrent-tests PRIVATE
         TEST_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
 
+if (CMAKE_GENERATOR STREQUAL "MinGW Makefiles")
+    find_program(HAS_LLD_LINKER "lld")
+    if (HAS_LLD_LINKER)
+        message(STATUS "Using lld linker for MinGW generator.")
+        target_link_options(dottorrent-tests PRIVATE -fuse-ld=lld)
+    endif()
+endif()
+
 catch_discover_tests(dottorrent-tests)
 
 

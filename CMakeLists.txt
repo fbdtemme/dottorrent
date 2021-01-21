@@ -15,7 +15,7 @@ include(GNUInstallDirs)
 option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
 option(DOTTORRENT_BUILD_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
-                          "The cryptographic library to link agains. Options are: openssl")
+                          "The cryptographic library to link agains. Options are: openssl libgcrypt, wincng")
 option(DOTTORRENT_INSTALL "Generate an install target" ON)
 
 # add cmake directory for Find* modules
@@ -39,25 +39,34 @@ add_library(dottorrent
         src/v2_checksum_hasher.cpp
         src/hasher/backends/openssl.cpp
         src/hasher/backends/gcrypt.cpp
+        src/hasher/backends/wincng.cpp
         src/storage_verifier.cpp
-        include/dottorrent/chunk_verifier.hpp)
+        )
 
 
 add_library(dottorrent::dottorrent ALIAS dottorrent)
 
 target_compile_features(dottorrent PUBLIC cxx_std_20)
 
+if (WIN32)
+    message(STATUS "Windows platform detected: Setting default crypto backend to WinCNG")
+    set(DOTTORRENT_CRYPTO_LIB "WinCNG")
+endif()
 
 string(TOLOWER ${DOTTORRENT_CRYPTO_LIB} DOTTORRENT_CRYPTO_LIB)
 
-if (${DOTTORRENT_CRYPTO_LIB} STREQUAL "openssl")
+if (DOTTORRENT_CRYPTO_LIB STREQUAL "openssl")
     find_package(OpenSSL REQUIRED)
     target_link_libraries(${PROJECT_NAME}      PUBLIC OpenSSL::Crypto)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_OPENSSL)
-
     message(STATUS "Using cryptographic library: OpenSSL")
-else()
-    message(FATAL_ERROR "Undefined crypto library: ${DOTTORRENT_CRYPTO_LIB}")
+
+elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "libgcrypt")
+    # TODO: Add FindModule for libgcrypt
+elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wincng")
+    target_link_libraries(${PROJECT_NAME}   PUBLIC bcrypt)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WINCNG)
+    message(STATUS "Using cryptographic library: WinCNG")
 endif()
 
 include(external/external.cmake)
@@ -75,10 +84,10 @@ set(dottorrent_public_include_dir  ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT
 target_link_libraries(dottorrent
     PUBLIC
         bencode::bencode
-        Threads::Threads
         fmt::fmt-header-only
         gsl::gsl-lite-v1
-    )
+        Threads::Threads
+        )
 
 if (DOTTORRENT_BUILD_COVERAGE)
     message(STATUS "Building with coverage enabled")

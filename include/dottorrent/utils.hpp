@@ -1,6 +1,7 @@
 #pragma once
 
 #include <span>
+#include <bit>
 #include <array>
 #include <optional>
 #include <numeric>
