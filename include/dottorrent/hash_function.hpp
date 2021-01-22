@@ -56,8 +56,8 @@ constexpr std::string_view to_string(hash_function f)
     switch (f) {
         case hash_function::md4:         return "md4";
         case hash_function::md5:         return "md5";
-        case hash_function::blake2b_512: return "blake2b512";
-        case hash_function::blake2s_256: return "blake2s256";
+        case hash_function::blake2b_512: return "blake2b_512";
+        case hash_function::blake2s_256: return "blake2s_256";
         case hash_function::sha1:        return "sha1";
         case hash_function::sha224:      return "sha224";
         case hash_function::sha256:      return "sha256";
