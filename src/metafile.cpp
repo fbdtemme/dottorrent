@@ -166,9 +166,6 @@ std::chrono::seconds metafile::creation_date() const
 void metafile::set_creation_date(std::time_t time)
 { set_creation_date(std::chrono::system_clock::from_time_t(time)); }
 
-void metafile::set_creation_date(std::chrono::system_clock::time_point time)
-{ creation_date_= std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count(); }
-
 const std::unordered_set<sha1_hash>& metafile::similar_torrents() const
 { return similar_torrents_; }
 

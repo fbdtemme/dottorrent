@@ -103,7 +103,9 @@ public:
 
     void set_creation_date(std::time_t time);
 
-    void set_creation_date(std::chrono::system_clock::time_point time);
+    template <typename Duration>
+    void set_creation_date(std::chrono::time_point<std::chrono::system_clock, Duration> time)
+    { creation_date_ = std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count(); }
 
     const std::unordered_set<sha1_hash>& similar_torrents() const;
 
@@ -155,7 +157,7 @@ private:
 
     std::string name_;
     std::string comment_;
-    std::int64_t creation_date_ = 0;
+    std::uint64_t creation_date_ = 0;
     std::string created_by_;
     bool private_ = false;
 
