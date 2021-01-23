@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_set>
 
 #include "dottorrent/hash_function_traits.hpp"
 #include "dottorrent/hasher/hasher.hpp"
@@ -51,6 +52,20 @@ make_hash(std::span<const std::byte> data)
     hasher->update(data);
     hasher->finalize_to(result);
     return result;
+}
+
+inline const std::unordered_set<hash_function>&
+hasher_supported_algorithms() noexcept
+{
+#if defined(DOTTORRENT_USE_OPENSSL)
+    return openssl_hasher::supported_algorithms();
+#elif defined(DOTTORRENT_USE_GCRYPT)
+    return gcrypt_hasher::supported_algorithms();
+#elif defined(DOTTORRENT_USE_WINCNG)
+    return wincng_hasher::supported_algorithms();
+#else
+    #error "No cryptographic library specified!"
+#endif
 }
 
 }

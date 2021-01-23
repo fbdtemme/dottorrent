@@ -7,6 +7,16 @@
 namespace dottorrent {
 
 namespace detail {
+
+static const auto supported_hash_functions_wincng = std::unordered_set {
+        hash_function::md4,
+        hash_function::md5,
+        hash_function::sha1,
+        hash_function::sha256,
+        hash_function::sha384,
+        hash_function::sha512,
+};
+
 constexpr wincng::message_digest_algorithm get_wincng_algorithm(hash_function function)
 {
     using namespace wincng;
@@ -42,6 +52,11 @@ public:
     {
         digest_.finalize_to(out);
         digest_.reset();
+    }
+
+    static const std::unordered_set<hash_function>& supported_algorithms() noexcept
+    {
+        return detail::supported_hash_functions_wincng;
     }
 
 private:

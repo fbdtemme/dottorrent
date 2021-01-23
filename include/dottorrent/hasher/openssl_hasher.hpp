@@ -8,6 +8,26 @@ namespace dottorrent {
 
 namespace detail {
 
+static const auto supported_hash_functions_openssl = std::unordered_set {
+        hash_function::md4,
+        hash_function::md5,
+        hash_function::blake2b_512,
+        hash_function::blake2s_256,
+        hash_function::sha1,
+        hash_function::sha224,
+        hash_function::sha256,
+        hash_function::sha384,
+        hash_function::sha512,
+        hash_function::sha3_224,
+        hash_function::sha3_256,
+        hash_function::sha3_384,
+        hash_function::sha3_512,
+        hash_function::shake128,
+        hash_function::shake256,
+        hash_function::ripemd160,
+        hash_function::whirlpool,
+};
+
 constexpr openssl::message_digest_algorithm get_openssl_algorithm(hash_function function)
 {
     using namespace openssl;
@@ -40,8 +60,8 @@ constexpr openssl::message_digest_algorithm get_openssl_algorithm(hash_function 
 class openssl_hasher : public hasher
 {
 public:
-    explicit openssl_hasher(hash_function function)
-            : digest_(detail::get_openssl_algorithm(function))
+    explicit openssl_hasher(hash_function algorithm)
+            : digest_(detail::get_openssl_algorithm(algorithm))
     {}
 
     void update(std::span<const std::byte> data) override
@@ -53,6 +73,11 @@ public:
     {
         digest_.finalize_to(out);
         digest_.reset();
+    }
+
+    static const std::unordered_set<hash_function>& supported_algorithms() noexcept
+    {
+        return detail::supported_hash_functions_openssl;
     }
 
 private:

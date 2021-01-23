@@ -1,7 +1,7 @@
 #pragma once
 #include <span>
 #include <cstddef>
-
+#include <unordered_set>
 
 namespace dottorrent {
 
@@ -18,6 +18,13 @@ public:
 
     virtual void finalize_to(std::span<std::byte> out) = 0;
 
+    static const std::unordered_set<hash_function>& supported_algorithms() noexcept
+    {
+        static std::unordered_set<hash_function> empty_set {};
+        return empty_set;
+    }
+
     virtual ~hasher() = default;
 };
+
 }
