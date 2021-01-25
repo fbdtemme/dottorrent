@@ -193,13 +193,14 @@ void parse_dht_nodes(const T& data, metafile& m)
     Expects(holds_dict(data));
 
     const auto& dict = bc::get_dict(data);
-    constexpr auto key = "dht"sv;
+    constexpr auto key = "nodes"sv;
 
     try {
         if (const auto it = dict.find(key); it != dict.end()) {
             const auto desc = bc::get_list(it->second);
             for (const auto& c : desc) {
                 const auto& tuple = bc::get_list(c);
+                Expects(tuple.size() == 2);
                 m.add_dht_node(
                         get_string(tuple[0]),
                         get_integer(tuple[1]));

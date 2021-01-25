@@ -15,7 +15,9 @@ constexpr void bencode_connect(
 {
     consumer.list_begin();
     consumer.string(value.url);
+    consumer.list_item();
     consumer.integer(value.port);
+    consumer.list_item();
     consumer.list_end();
 }
 
