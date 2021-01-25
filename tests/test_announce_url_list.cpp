@@ -101,3 +101,19 @@ TEST_CASE("insert and remove elements in non empty announce list")
         CHECK(url_list.tier_size(2) == 0);
     }
 }
+
+TEST_CASE("test as_nested_vector")
+{
+    namespace dt = dottorrent;
+
+    dt::announce_url_list url_list {
+            {"http://test0.com", "http://test1.com"},
+            {"http://test2.com"}
+    };
+
+    auto result = dt::as_nested_vector(url_list);
+    CHECK(result.size() == 2);
+    CHECK(result[0].front() == "http://test0.com");
+    CHECK(result[0].back() == "http://test1.com");
+    CHECK(result[1].front() == "http://test2.com");
+}

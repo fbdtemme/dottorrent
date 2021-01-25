@@ -1,7 +1,11 @@
 #pragma once
+#include <utility>
+#include <ranges>
 #include "dottorrent/announce_url.hpp"
 
 namespace dottorrent {
+
+namespace rng = std::ranges;
 
 /// Container for announce urls.
 class announce_url_list
@@ -16,6 +20,22 @@ public:
     using const_iterator = typename std::vector<announce_url>::const_iterator;
 
     explicit announce_url_list() = default;
+
+    announce_url_list(std::initializer_list<std::initializer_list<std::string>> il)
+        : announce_list_()
+    {
+        std::size_t tier = 0;
+        for (const auto& level : il) {
+            for (const auto& url : level) {
+                std::vector<announce_url> tmp {};
+                tmp.emplace_back(url, tier);
+                rng::sort(tmp, url_comparator);
+                rng::move(tmp, std::back_inserter(announce_list_));
+            }
+            ++tier;
+        }
+    }
+
     announce_url_list(const announce_url_list&) = default;
     announce_url_list(announce_url_list&&) = default;
     announce_url_list& operator=(const announce_url_list&) = default;
@@ -240,4 +260,5 @@ private:
     std::vector<announce_url> announce_list_;
 };
 
+std::vector<std::vector<std::string>> as_nested_vector(const announce_url_list& announces);
 } // namespace dottorrent

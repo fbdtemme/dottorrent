@@ -41,6 +41,7 @@ add_library(dottorrent
         src/hasher/backends/gcrypt.cpp
         src/hasher/backends/wincng.cpp
         src/storage_verifier.cpp
+        src/announce_url_list.cpp
         )
 
 
