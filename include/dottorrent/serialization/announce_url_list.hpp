@@ -21,12 +21,15 @@ constexpr void bencode_connect(
         for (const auto& [url, tier] : value) {
             if (current_tier != tier) {
                 consumer.list_end();
+                consumer.list_item();
                 consumer.list_begin();
+                ++current_tier;
             }
             consumer.string(url);
             consumer.list_item();
         }
         consumer.list_end();
+        consumer.list_item();
     }
     consumer.list_end();
 }

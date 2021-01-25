@@ -4,8 +4,11 @@
 #include <catch2/catch.hpp>
 
 #include <dottorrent/announce_url_list.hpp>
+#include <bencode/bencode.hpp>
+#include <dottorrent/serialization/announce_url_list.hpp>
 
-
+namespace dt = dottorrent;
+namespace bc = bencode;
 
 TEST_CASE("insert new elements in empty announce list") {
     using namespace dottorrent;
@@ -116,4 +119,22 @@ TEST_CASE("test as_nested_vector")
     CHECK(result[0].front() == "http://test0.com");
     CHECK(result[0].back() == "http://test1.com");
     CHECK(result[1].front() == "http://test2.com");
+}
+
+TEST_CASE("test bencode serialization")
+{
+
+    dt::announce_url_list url_list {
+            {"http://test0.com", "http://test1.com"},
+            {"http://test2.com"}
+    };
+
+    bc::bvalue bv(url_list);
+
+    auto list = get_list(bv);
+    const auto& l1 = list.at(0);
+    const auto& l2 = list.at(1);
+    CHECK(l1.at(0) == "http://test0.com");
+    CHECK(l1.at(1) == "http://test1.com");
+    CHECK(l2.at(0) == "http://test2.com");
 }
