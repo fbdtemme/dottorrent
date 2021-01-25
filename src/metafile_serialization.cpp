@@ -228,13 +228,13 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
 
 bencode::bvalue make_bvalue_common(const metafile& m)
 {
-    // add first element of announce-url to announce for compatibility
+    // add first element of announce-list to announce for compatibility
     auto torrent = bc::bvalue(bc::btype::dict);
     auto& btorrent = get_dict(torrent);
 
     if (!m.trackers().empty()) {
         btorrent.insert_or_assign("announce", m.trackers()[0].url);
-        btorrent.insert_or_assign("announce-url", m.trackers());
+        btorrent.insert_or_assign("announce-list", m.trackers());
     }
     if (!m.comment().empty()) {
         btorrent.insert_or_assign("comment", m.comment());
