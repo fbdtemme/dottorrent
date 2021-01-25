@@ -118,14 +118,28 @@ const std::vector<dht_node>& metafile::dht_nodes() const
 
 void metafile::add_dht_node(std::string_view url, uint16_t port)
 {
-    const auto entry = dht_node{std::string(url), port};
+    const auto node = dht_node{std::string(url), port};
+    add_dht_node(std::move(node));
+}
 
-    if (auto it = std::find(dht_nodes_.begin(), dht_nodes_.end(), entry);
+void metafile::add_dht_node(const dht_node& node)
+{
+    if (auto it = std::find(dht_nodes_.begin(), dht_nodes_.end(), node);
             it == dht_nodes_.end())
     {
-        dht_nodes_.push_back(entry);
+        dht_nodes_.push_back(node);
     }
 }
+
+void metafile::add_dht_node(dht_node&& node)
+{
+    if (auto it = std::find(dht_nodes_.begin(), dht_nodes_.end(), node);
+            it == dht_nodes_.end())
+    {
+        dht_nodes_.push_back(std::move(node));
+    }
+}
+
 
 void metafile::remove_dht_node(std::string_view url, uint16_t port)
 {

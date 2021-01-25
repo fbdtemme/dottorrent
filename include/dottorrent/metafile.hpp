@@ -83,6 +83,10 @@ public:
 
     void add_dht_node(std::string_view url, uint16_t port);
 
+    void add_dht_node(const dht_node& node);
+
+    void add_dht_node(dht_node&& node);
+
     void remove_dht_node(std::string_view url, uint16_t port);
 
     void clear_dht_nodes();
