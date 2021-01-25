@@ -101,7 +101,9 @@ enum protocol file_storage::protocol() const noexcept
     if (v1 && v2) return protocol::v1 | protocol::v2;
     else if (v1)  return protocol::v1;
     else if (v2)  return protocol::v2;
-    else          return protocol::none;
+    // Check if we have a v1 torrent with all empty files
+    else if (total_file_size() == 0) return protocol::v1;
+    return protocol::none;
 }
 
 std::size_t file_storage::piece_size() const noexcept
