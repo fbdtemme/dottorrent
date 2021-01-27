@@ -118,8 +118,8 @@ public:
         std::string s(size_bytes * 2, ' ');
         for (size_t i = 0; i < size_bytes; ++i) {
             auto c = static_cast<const uint8_t>(data_.data()[i]);
-            s[2 * i] = detail::int_to_hex_table[(c & 0xF0u)>>4u];
-            s[2 * i+1] = detail::int_to_hex_table[c & 0x0Fu];
+            s[2 * i] = detail::int_to_hex_lower_case_table[(c & 0xF0u) >> 4u];
+            s[2 * i+1] = detail::int_to_hex_lower_case_table[c & 0x0Fu];
         }
         return s;
     }

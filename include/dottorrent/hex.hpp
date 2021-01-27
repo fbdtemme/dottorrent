@@ -6,14 +6,22 @@
 #include <numeric>
 #include <filesystem>
 #include <charconv>
+#include <ranges>
 
 namespace dottorrent {
 
+namespace rng = std::ranges;
+
 namespace detail {
 
-inline constexpr std::array<char, 16> int_to_hex_table = {
+inline constexpr std::array<char, 16> int_to_hex_lower_case_table = {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         'a', 'b', 'c', 'd', 'e', 'f'
+};
+
+inline constexpr std::array<char, 16> int_to_hex_upper_case_table = {
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        'A', 'B', 'C', 'D', 'E', 'F'
 };
 
 inline constexpr auto generate_hex_to_int_table() noexcept
@@ -44,9 +52,11 @@ inline constexpr auto hex_to_int = hex_to_int_lookup_table{};
 
 inline constexpr bool hex_to_byte(char a, char b, std::byte& out)
 {
+    constexpr auto invalid = std::numeric_limits<unsigned char>::max();
+
     unsigned char upper = hex_to_int(a);
     unsigned char lower = hex_to_int(b);
-    if ((upper & lower) == 0xFF) [[unlikely]] return false;
+    if (upper == invalid || lower == invalid) [[unlikely]] return false;
     out = std::byte((upper << 4u) + lower);
     return true;
 }
@@ -57,12 +67,21 @@ inline constexpr bool hex_to_byte(std::string_view hex_pair, std::byte& out)
 }
 
 // write hexademil representation of a byte to out
-inline void constexpr byte_to_hex(char* __restrict out, std::byte c)
+inline constexpr void byte_to_hex(std::byte c, char * __restrict out)
 {
     auto v = to_integer<unsigned char>(c);
-    out[0] = detail::int_to_hex_table[(v & 0xf0) >> 4u];
-    out[1] = detail::int_to_hex_table[v & 0x0f];
+    out[0] = detail::int_to_hex_lower_case_table[(v & 0xf0) >> 4u];
+    out[1] = detail::int_to_hex_lower_case_table[v & 0x0f];
 }
+
+// write hexademil representation of a byte to out
+inline constexpr void byte_to_hex_uppercase(std::byte c, char * __restrict out)
+{
+    auto v = to_integer<unsigned char>(c);
+    out[0] = detail::int_to_hex_upper_case_table[(v & 0xf0) >> 4u];
+    out[1] = detail::int_to_hex_upper_case_table[v & 0x0f];
+}
+
 
 }
 
@@ -104,7 +123,7 @@ inline std::string to_hexadecimal_string(std::span<const std::byte> data)
 
     char* out = s.data();
     for (const auto c : data) {
-        detail::byte_to_hex(out, c);
+        detail::byte_to_hex(c, out);
         std::advance(out, 2);
     }
     return s;
@@ -116,7 +135,7 @@ inline constexpr char* to_hexadecimal_string(OutputIt out, std::span<const std::
     std::array<char, 2> buf {};
 
     for (const auto c : data) {
-        detail::byte_to_hex(buf.data(), c);
+        detail::byte_to_hex(c, buf.data());
         std::copy_n(buf, 2, out);
     }
     return out;

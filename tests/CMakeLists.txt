@@ -17,7 +17,10 @@ add_executable(dottorrent-tests
         test_hashers.cpp
         test_hex.cpp
         test_file_storage.cpp
-        test_file_attributes.cpp)
+        test_file_attributes.cpp
+        percent_encoding.cpp
+        magnet_uri.cpp
+)
 
 
 target_link_libraries(dottorrent-tests Catch2::Catch2 dottorrent)

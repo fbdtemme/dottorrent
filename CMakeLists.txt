@@ -42,6 +42,8 @@ add_library(dottorrent
         src/hasher/backends/wincng.cpp
         src/storage_verifier.cpp
         src/announce_url_list.cpp
+        src/magnet_uri.cpp
+        src/percent_encode.cpp
         )
 
 
