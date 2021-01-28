@@ -37,6 +37,7 @@ private:
     // for each file the v1 piece index the file starts at.
     std::vector<std::size_t> v1_piece_offsets_;
     std::vector<std::byte> padding_;
+    std::mutex padding_mutex_;
 };
 
 } // namespace dottorrent

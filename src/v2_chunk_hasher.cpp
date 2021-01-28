@@ -120,12 +120,16 @@ void v2_chunk_hasher::hash_chunk(hasher& sha256_hasher, hasher& sha1_hasher, con
             if (chunk.file_index+1 < storage.file_count()-1) {
                 const auto& entry = storage.at(chunk.file_index+1);
                 Expects(entry.is_padding_file());
-                padding_.resize(entry.file_size(), std::byte{0});
-
                 // add the final partial piece and pad the rest of the piece
                 auto final_piece = data.subspan(piece_in_chunk_index * piece_size);
                 sha1_hasher.update(final_piece);
-                sha1_hasher.update(padding_);
+
+                {
+                    std::unique_lock lck{padding_mutex_};
+                    padding_.resize((piece_size-final_piece.size()), std::byte{0});
+                    sha1_hasher.update(padding_);
+                }
+
                 sha1_hasher.finalize_to(piece_hash);
                 process_piece_hash(chunk.piece_index + piece_in_chunk_index, chunk.file_index, piece_hash);
                 bytes_hashed_.fetch_add(final_piece.size() + padding_.size(), std::memory_order::relaxed);
