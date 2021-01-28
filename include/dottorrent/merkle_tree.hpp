@@ -75,8 +75,9 @@ public:
     /// @remark Not thread-safe.
     void set_leaf_nodes(std::size_t leaf_nodes, const value_type& value = {})
     {
-        std::size_t height = detail::log2_ceil(leaf_nodes);
+        std::size_t height = (leaf_nodes != 0) ? detail::log2_ceil(leaf_nodes) : 1;
         std::size_t node_count = total_node_count_for_height(height);
+        Ensures(node_count >= 1);
 
         std::unique_lock lck{mutex_};
         data_.clear();
@@ -176,7 +177,7 @@ private:
         Expects(index < nodes_in_layer(layer));
 
         auto flat_index = get_flat_index(layer, index);
-        Expects(flat_index < data_.size());
+        Expects(flat_index <= data_.size());
         std::unique_lock lck{mutex_};
         data_[flat_index] = value;
     }
@@ -185,7 +186,9 @@ private:
     { return (1U << layer); }
 
     static constexpr std::size_t total_node_count_for_height(std::size_t height) noexcept
-    { return (1U << (height + 1)) - 1; }
+    {
+        return (1U << (height + 1)) - 1;
+    }
 
     static constexpr std::size_t get_flat_index(std::size_t layer, std::size_t index) noexcept
     { return (1U << layer) - 1 + index; }
