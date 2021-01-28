@@ -44,7 +44,6 @@ void v2_chunk_reader::run()
         while (!cancelled_.load(std::memory_order_relaxed)) {
             f_.read(reinterpret_cast<char*>(chunk->data()), chunk_size_);
             current_chunk_size_ = f_.gcount();
-            Expects(current_chunk_size_ > 0);
 
             chunk->resize(current_chunk_size_);
             bytes_read_.fetch_add(current_chunk_size_, std::memory_order_relaxed);
