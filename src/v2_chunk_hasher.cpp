@@ -67,7 +67,7 @@ void v2_chunk_hasher::hash_chunk(hasher& sha256_hasher, hasher& sha1_hasher, con
     sha256_hash leaf {};
 
     std::size_t i = 0;
-    for ( ; i < blocks_in_chunk-1; ++i) {
+    for ( ; blocks_in_chunk != 0 && i < blocks_in_chunk-1; ++i) {
         sha256_hasher.update(data.subspan(i * v2_block_size, v2_block_size));
         sha256_hasher.finalize_to(leaf);
         tree.set_leaf(index_offset + i, leaf);
@@ -91,7 +91,6 @@ void v2_chunk_hasher::hash_chunk(hasher& sha256_hasher, hasher& sha1_hasher, con
 
     if (add_v1_compatibility_) {
         // v1 compatibility data
-        Expects(pieces_in_chunk >= 1);
         sha1_hash piece_hash{};
 
         bool needs_padding = chunk.data->size() % piece_size != 0;
@@ -102,7 +101,7 @@ void v2_chunk_hasher::hash_chunk(hasher& sha256_hasher, hasher& sha1_hasher, con
             pieces_to_process = pieces_in_chunk;
         } else {
             // last piece needs padding or is the last piece of the file
-            pieces_to_process = pieces_in_chunk -1;
+            pieces_to_process = pieces_in_chunk != 0 ? pieces_in_chunk-1: 0;
         }
 
         std::size_t piece_in_chunk_index = 0;
