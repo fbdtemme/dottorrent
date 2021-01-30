@@ -57,7 +57,9 @@ bencode::bvalue make_bvalue_infodict_v1(const metafile& m)
     if (auto is_private = m.is_private(); is_private) {
         info.insert_or_assign("private", is_private);
     }
-
+    if (!m.source().empty()) {
+        info.insert_or_assign("source", m.source());
+    }
     return binfo;
 }
 
@@ -124,7 +126,9 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
     if (auto is_private = m.is_private(); is_private) {
         info.insert_or_assign("private", is_private);
     }
-
+    if (!m.source().empty()) {
+        info.insert_or_assign("source", m.source());
+    }
     return binfo;
 }
 
@@ -221,7 +225,9 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
     if (auto is_private = m.is_private(); is_private) {
         info.insert_or_assign("private", is_private);
     }
-
+    if (!m.source().empty()) {
+        info.insert_or_assign("source", m.source());
+    }
     return binfo;
 }
 
@@ -253,9 +259,6 @@ bencode::bvalue make_bvalue_common(const metafile& m)
     }
     if (!m.similar_torrents().empty()) {
         btorrent.insert_or_assign("similar", m.similar_torrents());
-    }
-    if (!m.source().empty()) {
-        btorrent.insert_or_assign("source", m.source());
     }
     if (!m.web_seeds().empty()) {
         btorrent.insert_or_assign("url-list", m.web_seeds());
