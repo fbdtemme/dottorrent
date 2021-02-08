@@ -4,9 +4,18 @@
 #include <bit>
 
 #include "dottorrent/storage_hasher.hpp"
-#include "dottorrent/v1_chunk_reader.hpp"
-#include "dottorrent/v2_chunk_reader.hpp"
+
 #include "dottorrent/v1_chunk_hasher.hpp"
+
+#ifdef DOTTORRENT_MMAP_CHUNK_READER
+    #include "dottorrent/v1_chunk_reader_mmap.hpp"
+//    #include "dottorrent/v2_chunk_reader_mmap.hpp"
+    #include "dottorrent/v2_chunk_reader.hpp"
+#else
+    #include "dottorrent/v1_chunk_reader.hpp"
+    #include "dottorrent/v2_chunk_reader.hpp"
+#endif
+
 #include "dottorrent/v2_chunk_hasher.hpp"
 #include <dottorrent/v1_checksum_hasher.hpp>
 #include <dottorrent/v2_checksum_hasher.hpp>
@@ -69,7 +78,11 @@ void storage_hasher::start() {
     auto chunk_size = std::max(memory_.min_chunk_size, storage.piece_size());
 
     if (protocol_ == protocol::v1) {
+#ifdef DOTTORRENT_MMAP_CHUNK_READER
+        reader_ = std::make_unique<v1_chunk_reader_mmap>(storage_, chunk_size, memory_.max_memory);
+#else
         reader_ = std::make_unique<v1_chunk_reader>(storage_, chunk_size, memory_.max_memory);
+#endif
     }
     else {
         reader_ = std::make_unique<v2_chunk_reader>(storage_, chunk_size, memory_.max_memory);
