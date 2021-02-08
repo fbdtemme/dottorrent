@@ -31,7 +31,7 @@ add_library(dottorrent
         src/storage_hasher.cpp
         src/v1_chunk_hasher.cpp
         src/v1_chunk_reader.cpp
-        src/v1_chunk_reader_mmap.cpp
+        src/v1_chunk_reader_linux.cpp
         src/v1_chunk_verifier.cpp
         src/v1_checksum_hasher.cpp
         src/v2_chunk_reader.cpp
@@ -74,9 +74,8 @@ elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wincng")
 endif()
 
 
-if (DOTTORRENT_MMAP_CHUNK_READER)
-    target_link_libraries(${PROJECT_NAME} PUBLIC mio::mio)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_MMAP_CHUNK_READER)
+if (DOTTORRENT_NATIVE_CHUNK_READER)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_NATIVE_CHUNK_READER)
 endif()
 
 include(external/external.cmake)

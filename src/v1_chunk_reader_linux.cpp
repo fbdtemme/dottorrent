@@ -1,15 +1,15 @@
-#include "dottorrent/v1_chunk_reader_mmap.hpp"
+#include "dottorrent/v1_chunk_reader_linux.hpp"
 
-#include <mio/mmap.hpp>
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <fstream>
 
-#ifdef __linux__
-#include <sys/mman.h>
-#endif
+
 
 namespace dottorrent {
 
-void v1_chunk_reader_mmap::run()
+void v1_chunk_reader_linux::run()
 {
     const auto file_paths = absolute_file_paths(storage_);
 
@@ -42,20 +42,30 @@ void v1_chunk_reader_mmap::run()
 
         std::error_code ec{};
         file_offset_ = 0;
-        f_ = mio::make_mmap_source(file_path.native(), ec);
-        if (ec != std::error_code{}) {
-            throw std::system_error(ec);
+
+        f_ = open(file_path.c_str(), O_RDONLY);
+        if (f_ == -1) {
+            throw std::system_error(std::make_error_code(std::errc{errno}));
         }
-#ifdef __linux__
-        madvise((void*) f_.data(), f_.size(), POSIX_MADV_SEQUENTIAL);
-#endif
+
+        auto r = posix_fadvise64(f_, 0ul, file_entry.file_size(), POSIX_FADV_SEQUENTIAL);
+        if (r == -1) {
+            throw std::system_error(std::make_error_code(std::errc{errno}));
+        }
+
         // increment file index, file_index points to the next file now
         ++file_index_;
 
         while (!cancelled_.load(std::memory_order_relaxed)) {
-            std::size_t size_to_read = std::min(chunk_size_-chunk_offset_, f_.size()-file_offset_);
-            std::copy_n(std::next(f_.data(), file_offset_), size_to_read,
-                        reinterpret_cast<char*>(std::next(chunk_->data(), chunk_offset_)));
+            std::size_t size_to_read = std::min(chunk_size_-chunk_offset_,
+                                                file_entry.file_size()-file_offset_);
+            auto bytes_read = read(f_, reinterpret_cast<char*>(std::next(chunk_->data(), chunk_offset_)),
+                                   size_to_read);
+            if (bytes_read == -1) {
+                throw std::system_error(std::make_error_code(std::errc{errno}));
+            }
+            Expects(bytes_read == size_to_read);
+
             file_offsets_.push_back(chunk_offset_);
             chunk_offset_ += size_to_read;
             file_offset_ += size_to_read;
@@ -77,11 +87,14 @@ void v1_chunk_reader_mmap::run()
                 piece_index_ += pieces_per_chunk;
             }
 
-            if (file_offset_ == f_.size()) {
+            if (file_offset_ == file_entry.file_size()) {
                 break;
             }
         }
-        f_.unmap();
+        auto res = close(f_);
+        if (res == -1) {
+            throw std::system_error(std::make_error_code(std::errc{errno}));
+        }
     }
     // push last possibly partial chunk
     if (chunk_offset_ != 0) {
@@ -96,7 +109,7 @@ void v1_chunk_reader_mmap::run()
     Ensures(piece_index_ == storage.piece_count());
 }
 
-void v1_chunk_reader_mmap::handle_missing_file()
+void v1_chunk_reader_linux::handle_missing_file()
 {
     auto& storage = storage_.get();
     const auto piece_size = storage.piece_size();
@@ -156,7 +169,7 @@ void v1_chunk_reader_mmap::handle_missing_file()
 }
 
 
-void v1_chunk_reader_mmap::push(const data_chunk& data_chunk) {
+void v1_chunk_reader_linux::push(const data_chunk& data_chunk) {
     for (auto& queue : hash_queues_) {
         queue->push(data_chunk);
     }

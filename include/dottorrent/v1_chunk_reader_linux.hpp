@@ -2,14 +2,13 @@
 
 #include <algorithm>
 #include <fstream>
-#include <mio/mmap.hpp>
 
 #include "dottorrent/chunk_reader.hpp"
 
 namespace dottorrent {
 
 
-class v1_chunk_reader_mmap : public chunk_reader
+class v1_chunk_reader_linux : public chunk_reader
 {
 public:
     using chunk_reader::chunk_reader;
@@ -37,7 +36,7 @@ private:
     // index of the current file being read in the storage object
     std::size_t file_index_ = 0;
     // the current file being read
-    mio::mmap_source f_;
+    int f_;
     std::size_t file_offset_;
     // the current chunk being filled
     std::shared_ptr<data_type> chunk_;
