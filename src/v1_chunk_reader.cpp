@@ -29,6 +29,8 @@ void v1_chunk_reader::run()
         // set last modified date in the file entry of the storage
         storage.set_last_modified_time(file_index_, fs::last_write_time(file_path));
         f_.open(file_path, std::ios::binary);
+        // disable buffering
+        f_.rdbuf()->pubsetbuf(nullptr, 0);
         // increment file index, file_index points to the next file now
         ++ file_index_;
 

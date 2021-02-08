@@ -90,7 +90,7 @@ target_link_libraries(dottorrent
         fmt::fmt-header-only
         gsl::gsl-lite-v1
         Threads::Threads
-        )
+)
 
 if (DOTTORRENT_BUILD_COVERAGE)
     message(STATUS "Building with coverage enabled")

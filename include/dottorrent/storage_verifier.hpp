@@ -53,7 +53,7 @@ struct storage_verifier_options
     /// The minimum size of a block to read from disk.
     /// For piece sizes smaller than the min_chunk_size multiple pieces
     /// will be read in a single block for faster disk I/O.
-    std::size_t min_chunk_size = 1_MiB;
+    std::size_t min_chunk_size = 2_MiB;
     /// Max size of all file chunks in memory
     std::size_t max_memory = 128_MiB;
 
