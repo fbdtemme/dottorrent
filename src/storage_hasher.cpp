@@ -46,7 +46,7 @@ storage_hasher::storage_hasher(file_storage& storage, const storage_hasher_optio
         io_block_size_ = 8 * storage.piece_size();
     }
 #else
-    io_block_size_ = std::max(piece_size, options.min_io_block_size ? *options.min_io_block_size : 0);
+    io_block_size_ = std::max(piece_size, options.min_io_block_size ? *options.min_io_block_size : 1_MiB);
  #endif
 
     if (options.max_memory) {
