@@ -31,10 +31,8 @@ TEST_CASE("Test merkle tree")
         CHECK(tree.leaf_count() == 16);
     }
 
-    constexpr std::array<std::string_view, 10> pieces_data = {
-            "aasc", "asasd", "igrrg", "dqw",
-            "pf93", "92123f", "339jr", "q0vn4g",
-            "d-2hg", "jkloklew"
+    static std::array<std::string, 10> pieces_data = {
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j"
     };
 
     SECTION("Add leave pieces") {
@@ -50,10 +48,9 @@ TEST_CASE("Test merkle tree")
         for (std::size_t i = 0; i < piece_count; ++i) {
             CHECK(tree.get_leaf(i) != sha256_hash{});
         }
-    }
-    SECTION("Calculate root") {
+
         tree.update();
         // root hash is actually set
-        CHECK(tree.root() != sha256_hash{});
+        CHECK(!tree.root().hex_string().empty());
     }
 }

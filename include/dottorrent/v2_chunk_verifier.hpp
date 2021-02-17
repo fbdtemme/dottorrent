@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dottorrent/chunk_verifier.hpp"
-#include "dottorrent/v2_chunk_hasher.hpp"
+#include "dottorrent/v2_chunk_hasher_sb.hpp"
 
 namespace dottorrent
 {
@@ -17,11 +17,11 @@ public:
     const double percentage(std::size_t file_index) const noexcept override;
 
 protected:
-    void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) override;
+    void hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk) override;
 
-    void hash_chunk(hasher& hasher, const data_chunk& chunk);
+    void hash_chunk(single_buffer_hasher& hasher, const data_chunk& chunk);
 
-    void verify_piece_layers_and_root(hasher& hasher, std::size_t file_index);
+    void verify_piece_layers_and_root(single_buffer_hasher& hasher, std::size_t file_index);
 
 private:
     std::vector<merkle_tree<hash_function::sha256>> merkle_trees_;

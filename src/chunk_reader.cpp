@@ -4,15 +4,15 @@
 
 namespace dottorrent {
 
-chunk_reader::chunk_reader(file_storage& storage, std::size_t block_size, std::size_t max_memory)
+chunk_reader::chunk_reader(file_storage& storage, std::size_t block_size, std::size_t capacity)
         : storage_(storage)
         , chunk_size_(block_size)
-        , pool_(max_memory / chunk_size_)
+        , pool_(capacity)
 {
     Expects(storage.piece_size() >= 16_KiB);
     Expects(std::has_single_bit(storage.piece_size()));
     Expects(chunk_size_ % storage.piece_size() == 0);
-    Expects(max_memory > chunk_size_);
+    Expects(capacity > 1);
 }
 
 void chunk_reader::register_hash_queue(std::shared_ptr<hash_queue> q)

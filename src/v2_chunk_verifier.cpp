@@ -47,13 +47,13 @@ v2_chunk_verifier::v2_chunk_verifier(file_storage& storage, std::size_t thread_c
     piece_map_.resize(piece_map_size);
 }
 
-void v2_chunk_verifier::hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk)
+void v2_chunk_verifier::hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk)
 {
     hash_chunk(*hashers.front(), chunk);
 }
 
 
-void v2_chunk_verifier::hash_chunk(hasher& sha256_hasher, const data_chunk& chunk)
+void v2_chunk_verifier::hash_chunk(single_buffer_hasher& sha256_hasher, const data_chunk& chunk)
 {
     file_storage& storage = storage_.get();
 
@@ -107,7 +107,7 @@ void v2_chunk_verifier::hash_chunk(hasher& sha256_hasher, const data_chunk& chun
 }
 
 
-void v2_chunk_verifier::verify_piece_layers_and_root(hasher& hasher, std::size_t file_index)
+void v2_chunk_verifier::verify_piece_layers_and_root(single_buffer_hasher& hasher, std::size_t file_index)
 {
     file_storage& storage = storage_;
     std::size_t piece_size = storage.piece_size();

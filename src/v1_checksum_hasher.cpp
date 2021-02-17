@@ -1,18 +1,18 @@
-#include "dottorrent/chunk_hasher.hpp"
+#include "dottorrent/chunk_hasher_single_buffer.hpp"
 #include "dottorrent/v1_checksum_hasher.hpp"
 
 namespace dottorrent {
 
 v1_checksum_hasher::v1_checksum_hasher(file_storage& storage, hash_function f, std::size_t capacity)
-        : chunk_hasher(storage, {f}, capacity, 1)
+        : chunk_hasher_single_buffer(storage, {f}, capacity, 1)
 {}
 
-void v1_checksum_hasher::hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk)
+void v1_checksum_hasher::hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk)
 {
     hash_chunk(*hashers.front(), chunk);
 }
 
-void v1_checksum_hasher::hash_chunk(hasher& hasher, const data_chunk& item) {
+void v1_checksum_hasher::hash_chunk(single_buffer_hasher& hasher, const data_chunk& item) {
     Expects(item.data != nullptr);
 
     file_storage& storage = storage_;

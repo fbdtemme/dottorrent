@@ -4,10 +4,12 @@
 #include <unordered_set>
 
 #include "dottorrent/hash_function_traits.hpp"
-#include "dottorrent/hasher/hasher.hpp"
+#include "dottorrent/hasher/single_buffer_hasher.hpp"
+#include "dottorrent/hasher/multi_buffer_hasher.hpp"
 
 #ifdef DOTTORRENT_USE_OPENSSL
 #include "dottorrent/hasher/openssl_hasher.hpp"
+
 #endif
 #ifdef DOTTORRENT_USE_GCRYPT
 #include "dottorrent/hasher/gcrypt_hasher.hpp"
@@ -16,10 +18,16 @@
 #include "dottorrent/hasher/wincng_hasher.hpp"
 #endif
 
+#if defined(DOTTORRENT_USE_ISAL)
+#include "dottorrent/hasher/isal_multi_buffer_hasher.hpp"
+#include "dottorrent/hasher/backends/isal.hpp"
+#endif
+
+
 namespace dottorrent {
 
 /// Return a polymorphic hasher for given algorithm
-inline std::unique_ptr<hasher> make_hasher(hash_function f)
+inline std::unique_ptr<single_buffer_hasher> make_hasher(hash_function f)
 {
 #if defined(DOTTORRENT_USE_OPENSSL)
     return std::make_unique<openssl_hasher>(f);
@@ -31,6 +39,17 @@ inline std::unique_ptr<hasher> make_hasher(hash_function f)
     #error "No cryptographic library specified"
 #endif
 }
+
+
+/// Return a polymorphic hasher for given algorithm
+inline std::unique_ptr<multi_buffer_hasher> make_multi_buffer_hasher(hash_function f)
+{
+#if defined(DOTTORRENT_USE_ISAL)
+    return std::make_unique<isal_multi_buffer_hasher>(f);
+#endif
+    return nullptr;
+}
+
 
 template <hash_function F>
 inline typename hash_function_traits<F>::hash_type

@@ -1,3 +1,4 @@
+#if defined(__linux__) && defined(DOTTORRENT_NATIVE_CHUNK_READER)
 #include "dottorrent/v1_chunk_reader_linux.hpp"
 
 #include <unistd.h>
@@ -179,3 +180,5 @@ void v1_chunk_reader_linux::push(const data_chunk& data_chunk) {
 }
 
 } // namespace dottorrent
+
+#endif

@@ -26,7 +26,7 @@
 #include "dottorrent/hash.hpp"
 #include "dottorrent/checksum.hpp"
 #include "dottorrent/chunk_reader.hpp"
-#include "dottorrent/chunk_hasher.hpp"
+#include "dottorrent/chunk_hasher_single_buffer.hpp"
 
 
 
@@ -47,9 +47,11 @@ struct storage_hasher_options
     /// The minimum size of a block to read from disk.
     /// For piece sizes smaller than the min_chunk_size multiple pieces
     /// will be read in a single block for faster disk I/O.
-    std::size_t min_chunk_size = 2_MiB;
-    /// Max size of all file chunks in memory
-    std::size_t max_memory = 128_MiB;
+    std::optional<std::size_t> min_io_block_size = std::nullopt;
+    /// Max size of all file chunks in memory. The default capacity is determined by
+    std::optional<std::size_t> max_memory = std::nullopt;
+    /// Weither to enable multi-buffer hashing if linked against Intel ISA-L.
+    bool enable_multi_buffer_hashing = true;
 
     /// Number of threads to hash pieces.
     /// Total number of threads will be equal to:
@@ -62,13 +64,6 @@ struct storage_hasher_options
 class storage_hasher
 {
 public:
-    /// Options to control the memory usage of a storage_hasher.
-    struct memory_options
-    {
-        std::size_t min_chunk_size;
-        std::size_t max_memory;
-    };
-
     explicit storage_hasher(
                 file_storage& storage,
                 const storage_hasher_options& options = {});
@@ -122,8 +117,10 @@ private:
     std::reference_wrapper<file_storage> storage_;
     enum protocol protocol_;
     std::unordered_set<hash_function> checksums_;
-    memory_options memory_;
     std::size_t threads_;
+    std::size_t io_block_size_;
+    std::size_t queue_capacity_;
+    bool enable_multi_buffer_hashing;
 
     std::unique_ptr<chunk_reader> reader_;
     std::unique_ptr<chunk_processor> hasher_;

@@ -5,7 +5,7 @@
 
 #include "dottorrent/storage_hasher.hpp"
 
-#include "dottorrent/v1_chunk_hasher.hpp"
+
 
 #if defined(__linux__) && defined(DOTTORRENT_NATIVE_CHUNK_READER)
     #include "dottorrent/v1_chunk_reader_linux.hpp"
@@ -14,7 +14,11 @@
 #include "dottorrent/v1_chunk_reader.hpp"
 #include "dottorrent/v2_chunk_reader.hpp"
 
-#include "dottorrent/v2_chunk_hasher.hpp"
+#include "dottorrent/v1_chunk_hasher_sb.hpp"
+#include "dottorrent/v1_chunk_hasher_mb.hpp"
+#include "dottorrent/v2_chunk_hasher_sb.hpp"
+#include "dottorrent/v2_chunk_hasher_mb.hpp"
+
 #include <dottorrent/v1_checksum_hasher.hpp>
 #include <dottorrent/v2_checksum_hasher.hpp>
 
@@ -25,11 +29,32 @@ storage_hasher::storage_hasher(file_storage& storage, const storage_hasher_optio
         : storage_(storage)
         , protocol_(options.protocol_version)
         , checksums_(options.checksums)
-        , memory_({.min_chunk_size=options.min_chunk_size, .max_memory=options.max_memory})
         , threads_(options.threads)
+        , io_block_size_()
+        , queue_capacity_()
+        , enable_multi_buffer_hashing(options.enable_multi_buffer_hashing)
 {
     if (storage.piece_size() == 0)
         storage.set_piece_size(choose_piece_size(storage));
+
+    auto piece_size = storage.piece_size();
+
+#ifdef DOTTORRENT_USE_ISAL
+    if (options.min_io_block_size) {
+        io_block_size_ = std::max(piece_size, *options.min_io_block_size);
+    } else {
+        io_block_size_ = 8 * storage.piece_size();
+    }
+#else
+    io_block_size_ = std::max(piece_size, options.min_io_block_size ? *options.min_io_block_size : 0);
+ #endif
+
+    if (options.max_memory) {
+        queue_capacity_ = std::max(std::size_t(2), *options.max_memory / io_block_size_);
+    }
+    else {
+        queue_capacity_ = std::max(std::size_t(2), 2*threads_);
+    }
 
     Expects(protocol_ != dottorrent::protocol::none);
     Expects(std::has_single_bit(storage.piece_size()));    // is a power of 2
@@ -73,39 +98,48 @@ void storage_hasher::start() {
         throw std::runtime_error("cannot start finished or cancelled hasher");
 
     auto& storage = storage_.get();
-    auto chunk_size = std::max(memory_.min_chunk_size, storage.piece_size());
 
     if (protocol_ == protocol::v1) {
-#ifdef DOTTORRENT_NATIVE_CHUNK_READER
-        reader_ = std::make_unique<v1_chunk_reader_linux>(storage_, chunk_size, memory_.max_memory);
-#else
-        reader_ = std::make_unique<v1_chunk_reader>(storage_, chunk_size, memory_.max_memory);
-#endif
+        reader_ = std::make_unique<v1_chunk_reader>(storage_, io_block_size_, queue_capacity_);
     }
     else {
-        reader_ = std::make_unique<v2_chunk_reader>(storage_, chunk_size, memory_.max_memory);
+        reader_ = std::make_unique<v2_chunk_reader>(storage_, io_block_size_, queue_capacity_);
     }
 
-    // add piece hashers and register them with the reader
-    std::size_t queue_capacity =  memory_.max_memory / chunk_size;
-
     if (protocol_ == protocol::v1) {
-        hasher_ = std::make_unique<v1_chunk_hasher>(storage_, queue_capacity, threads_);
+#ifdef DOTTORRENT_USE_ISAL
+        if (enable_multi_buffer_hashing)
+            hasher_ = std::make_unique<v1_chunk_hasher_mb>(storage_, queue_capacity_, threads_);
+        else
+            hasher_ = std::make_unique<v1_chunk_hasher_sb>(storage_, queue_capacity_, threads_);
+#else
+        hasher_ = std::make_unique<v1_chunk_hasher_sb>(storage_, queue_capacity_, threads_);
+#endif
         reader_->register_hash_queue(hasher_->get_queue());
 
         for (auto algo : checksums_) {
             auto& h = checksum_hashers_.emplace_back(
-                    std::make_unique<v1_checksum_hasher>(storage_, algo, queue_capacity));
+                    std::make_unique<v1_checksum_hasher>(storage_, algo, queue_capacity_));
             reader_->register_checksum_queue(h->get_queue());
         }
     } else {
-        hasher_ = std::make_unique<v2_chunk_hasher>(
-                storage_, queue_capacity, protocol_ == protocol::hybrid, threads_);
+
+#ifdef DOTTORRENT_USE_ISAL
+        if (enable_multi_buffer_hashing)
+            hasher_ = std::make_unique<v2_chunk_hasher_mb>(
+                    storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+        else
+            hasher_ = std::make_unique<v2_chunk_hasher_sb>(
+                    storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+#else
+        hasher_ = std::make_unique<v2_chunk_hasher_sb>(
+                storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+#endif
         reader_->register_hash_queue(hasher_->get_queue());
 
         for (auto algo : checksums_) {
             auto& h = checksum_hashers_.emplace_back(
-                    std::make_unique<v2_checksum_hasher>(storage_, algo, queue_capacity));
+                    std::make_unique<v2_checksum_hasher>(storage_, algo, queue_capacity_));
             reader_->register_checksum_queue(h->get_queue());
         }
     }

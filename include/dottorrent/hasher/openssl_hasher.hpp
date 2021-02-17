@@ -1,7 +1,7 @@
 #pragma once
 
 #include "dottorrent/hash_function.hpp"
-#include "dottorrent/hasher/hasher.hpp"
+#include "dottorrent/hasher/single_buffer_hasher.hpp"
 #include "dottorrent/hasher/backends/openssl.hpp"
 
 namespace dottorrent {
@@ -57,7 +57,7 @@ constexpr openssl::message_digest_algorithm get_openssl_algorithm(hash_function 
 }
 }
 
-class openssl_hasher : public hasher
+class openssl_hasher : public single_buffer_hasher
 {
 public:
     explicit openssl_hasher(hash_function algorithm)

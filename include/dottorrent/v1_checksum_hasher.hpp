@@ -18,15 +18,15 @@
 
 namespace dottorrent {
 
-class v1_checksum_hasher : public chunk_hasher {
+class v1_checksum_hasher : public chunk_hasher_single_buffer {
 public:
 
     explicit v1_checksum_hasher(file_storage& storage, hash_function f, std::size_t capacity);
 
 protected:
-    void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) override;
+    void hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk) override;
 
-    void hash_chunk(hasher& hasher, const data_chunk& item);
+    void hash_chunk(single_buffer_hasher& hasher, const data_chunk& item);
 
 private:
     std::atomic<std::size_t> current_file_index_ = 0;

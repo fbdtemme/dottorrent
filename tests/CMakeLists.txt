@@ -20,6 +20,7 @@ add_executable(dottorrent-tests
         test_file_attributes.cpp
         percent_encoding.cpp
         magnet_uri.cpp
+        hashers/test_isal_multibuffer_hasher.cpp
 )
 
 

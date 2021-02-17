@@ -1,3 +1,16 @@
+#pragma once
+
+#include <optional>
+#include <type_traits>
+#include <utility>
+#include <vector>
+#include <queue>
+#include <mutex>
+#include <ranges>
+#include <condition_variable>
+
+namespace dottorrent {
+
 /*
 Copyright (c) 2020 Erik Rigtorp <erik@rigtorp.se>
 
@@ -298,3 +311,101 @@ template<typename T,
 using MPMCQueue = mpmc::Queue<T, Allocator>;
 
 } // namespace rigtorp
+
+
+
+/// Wrap rigtorp::MPMCQueue with mutexes and conditition variables to reduce CPU usage
+/// when waiting a long time for enqueue/dequeue operations.
+template<typename T>
+class concurrent_queue
+{
+public:
+    using value_type = T;
+
+    explicit concurrent_queue(std::size_t capacity)
+        : mutex_()
+        , not_full_()
+        , not_empty_()
+        , capacity_()
+        , queue_(capacity)
+    {}
+
+    concurrent_queue(const concurrent_queue& rhs) = delete;
+    concurrent_queue& operator= (const concurrent_queue& rhs) = delete;
+
+    template<typename... Args>
+    void emplace(Args&& ... args) noexcept
+    {
+        std::size_t retries = 0;
+        bool success = false;
+
+        for (std::size_t retries = 0; retries < max_retries && !success; ++retries) {
+            success = queue_.try_emplace(std::forward<Args>(args)...);
+        }
+
+        if (success) {
+            size_.fetch_add(1, std::memory_order_relaxed);
+            not_empty_.notify_all();
+            return;
+        }
+
+        {
+            std::unique_lock lck{mutex_};
+            not_full_.wait(lck, [this]() { return size_.load(std::memory_order_relaxed) < capacity_; });
+        }
+        queue_.emplace(std::forward<Args>(args)...);
+        size_.fetch_add(1, std::memory_order_relaxed);
+        not_empty_.notify_all();
+    }
+
+    void push(const value_type& v)
+    {
+        emplace(v);
+    }
+
+    void pop(T& v)
+    {
+        std::size_t retries = 0;
+        bool success = false;
+
+        for (std::size_t retries = 0; retries < max_retries && !success; ++retries) {
+            success = queue_.try_pop(v);
+        }
+
+        if (success) {
+            size_.fetch_add(-1, std::memory_order_relaxed);
+            not_full_.notify_all();
+            return;
+        }
+
+        {
+            std::unique_lock lck{mutex_};
+            not_empty_.wait(lck, [this]() { return size_.load(std::memory_order_relaxed) > 0; });
+        }
+        queue_.pop(v);
+        size_.fetch_add(-1, std::memory_order_relaxed);
+        not_full_.notify_all();
+    }
+
+    bool try_pop(value_type& v)
+    {
+        auto success = queue_.try_pop(v);
+        if (success) {
+            size_.fetch_add(-1, std::memory_order_relaxed);
+            not_full_.notify_all();
+        }
+        return success;
+    }
+
+
+private:
+    static constexpr std::size_t max_retries = 100000;
+    mutable std::mutex mutex_;
+    std::condition_variable not_full_;
+    std::condition_variable not_empty_;
+    std::atomic<std::size_t> size_;
+    std::size_t capacity_;
+    rigtorp::MPMCQueue<T> queue_;
+};
+
+} // namespace dottorrent

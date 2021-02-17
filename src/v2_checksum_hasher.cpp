@@ -7,11 +7,11 @@ v2_checksum_hasher::v2_checksum_hasher(file_storage& storage, hash_function f, s
         : base_type(storage, {f}, capacity, 1)
 {}
 
-void v2_checksum_hasher::hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk) {
+void v2_checksum_hasher::hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk) {
     hash_chunk(*hashers.front(), chunk);
 }
 
-void v2_checksum_hasher::hash_chunk(hasher& hasher, const data_chunk& item)
+void v2_checksum_hasher::hash_chunk(single_buffer_hasher& hasher, const data_chunk& item)
 {
     Expects(item.data != nullptr);
 

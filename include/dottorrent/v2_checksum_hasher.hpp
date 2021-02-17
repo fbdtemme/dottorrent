@@ -12,7 +12,7 @@
 #include "dottorrent/file_storage.hpp"
 #include "dottorrent/data_chunk.hpp"
 #include "dottorrent/hash_function_traits.hpp"
-#include "dottorrent/chunk_hasher.hpp"
+#include "dottorrent/chunk_hasher_single_buffer.hpp"
 
 #include "dottorrent/hasher/factory.hpp"
 
@@ -22,17 +22,17 @@ namespace dottorrent {
 /// Per file merkle root checksums are in the base v2 spec.
 
 
-class v2_checksum_hasher : public chunk_hasher
+class v2_checksum_hasher : public chunk_hasher_single_buffer
 {
-    using base_type = chunk_hasher;
+    using base_type = chunk_hasher_single_buffer;
 public:
 
     explicit v2_checksum_hasher(file_storage& storage, hash_function f, std::size_t capacity);
 
 protected:
-    void hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk);
+    void hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk);
 
-    void hash_chunk(hasher& hasher, const data_chunk& item);
+    void hash_chunk(single_buffer_hasher& hasher, const data_chunk& item);
 
 private:
     std::atomic<std::size_t> current_file_index_ = 0;

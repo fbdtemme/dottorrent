@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <cassert>
 
-#include "dottorrent/mpmcqueue.hpp"
+#include <dottorrent/concurrent_queue.hpp>
 
 namespace dottorrent::pool {
 
@@ -34,7 +34,7 @@ public:
     using value_type = T;
     using value_ptr = std::shared_ptr<value_type>;
     using size_type = std::ptrdiff_t ;
-    using queue_type = rigtorp::mpmc::Queue<value_ptr>;
+    using queue_type = concurrent_queue<value_ptr>;
 
 public:
     /// Default constructor, we only want this to be available
@@ -132,7 +132,7 @@ private:
                 resources_left_.fetch_sub(1, std::memory_order_relaxed);
                 resource = std::invoke(Policy::construct);
             } else {
-                queue_.pop(resource);
+                 queue_.pop(resource);
             }
             // Here we create a std::shared_ptr<T> with a naked
             // pointer to the resource and a custom deleter

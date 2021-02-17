@@ -16,7 +16,9 @@ option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
 option(DOTTORRENT_BUILD_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
                           "The cryptographic library to link agains. Options are: openssl libgcrypt, wincng")
-option(DOTTORRENT_INSTALL "Generate an install target" ON)
+
+option(DOTTORRENT_CRYPTO_MULTIBUFFER "Enable multibuffer hashing with Intel ISA-L" OFF)
+option(DOTTORRENT_INSTALL            "Generate an install target" ON)
 
 # add cmake directory for Find* modules
 cmake_policy(SET CMP0076 NEW)
@@ -29,13 +31,11 @@ add_library(dottorrent
         src/metafile_parsing.cpp
         src/metafile_serialization.cpp
         src/storage_hasher.cpp
-        src/v1_chunk_hasher.cpp
         src/v1_chunk_reader.cpp
         src/v1_chunk_reader_linux.cpp
         src/v1_chunk_verifier.cpp
         src/v1_checksum_hasher.cpp
         src/v2_chunk_reader.cpp
-        src/v2_chunk_hasher.cpp
         src/v2_chunk_verifier.cpp
         src/v2_checksum_hasher.cpp
         src/hasher/backends/openssl.cpp
@@ -45,7 +45,14 @@ add_library(dottorrent
         src/announce_url_list.cpp
         src/magnet_uri.cpp
         src/percent_encode.cpp
-        )
+        src/chunk_hasher_single_buffer.cpp
+        src/chunk_hasher_multi_buffer.cpp
+        src/v2_chunk_hasher_mixin.cpp
+        src/v1_chunk_hasher_sb.cpp
+        src/v1_chunk_hasher_mb.cpp
+        src/v2_chunk_hasher_sb.cpp
+        src/v2_chunk_hasher_mb.cpp
+)
 
 
 add_library(dottorrent::dottorrent ALIAS dottorrent)
@@ -64,15 +71,21 @@ if (DOTTORRENT_CRYPTO_LIB STREQUAL "openssl")
     target_link_libraries(${PROJECT_NAME}      PUBLIC OpenSSL::Crypto)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_OPENSSL)
     message(STATUS "Using cryptographic library: OpenSSL")
-
-elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "libgcrypt")
-    # TODO: Add FindModule for libgcrypt
 elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wincng")
     target_link_libraries(${PROJECT_NAME}   PUBLIC bcrypt)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WINCNG)
     message(STATUS "Using cryptographic library: WinCNG")
 endif()
 
+
+if (DOTTORRENT_CRYPTO_MULTI_BUFFER)
+    include(FindPkgConfig)
+    pkg_check_modules(ISAL_CRYPTO                libisal_crypto)
+    target_link_libraries(${PROJECT_NAME}        PUBLIC ${ISAL_CRYPTO_LIBRARIES})
+    target_include_directories(${PROJECT_NAME}   PUBLIC ${ISAL_CRYPTO_INCLUDE_DIRS})
+    target_compile_definitions(${PROJECT_NAME}   PUBLIC DOTTORRENT_USE_ISAL)
+    message(STATUS "Using multibuffer hashing with Intel ISA-L")
+endif()
 
 if (DOTTORRENT_NATIVE_CHUNK_READER)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_NATIVE_CHUNK_READER)

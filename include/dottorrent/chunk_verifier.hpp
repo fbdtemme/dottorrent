@@ -8,14 +8,14 @@
 
 #include <gsl-lite/gsl-lite.hpp>
 
-#include "dottorrent/chunk_hasher.hpp"
+#include "dottorrent/chunk_hasher_single_buffer.hpp"
 
 namespace dottorrent {
 
-class chunk_verifier : public chunk_hasher
+class chunk_verifier : public chunk_hasher_single_buffer
 {
 public:
-    using chunk_hasher::chunk_hasher;
+    using chunk_hasher_single_buffer::chunk_hasher_single_buffer;
     // Return for each block weither it is valid or not.
     // For v1 torrents each block is equal to the piece size.
     // For v2 torrents each block is equal to 16 KiB.

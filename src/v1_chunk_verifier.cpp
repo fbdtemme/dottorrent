@@ -7,12 +7,12 @@ v1_chunk_verifier::v1_chunk_verifier(file_storage& storage, std::size_t thread_c
         , piece_map_(storage.pieces().size())
     { }
 
-void v1_chunk_verifier::hash_chunk(std::vector<std::unique_ptr<hasher>>& hashers, const data_chunk& chunk)
+void v1_chunk_verifier::hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk)
 {
     hash_chunk(*hashers.front(), chunk);
 }
 
-void v1_chunk_verifier::hash_chunk(hasher& hasher, const data_chunk& chunk)
+void v1_chunk_verifier::hash_chunk(single_buffer_hasher& hasher, const data_chunk& chunk)
 {
     file_storage& storage = storage_;
     std::size_t piece_size = storage.piece_size();

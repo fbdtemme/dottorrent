@@ -8,7 +8,7 @@
 
 #include <gsl-lite/gsl-lite.hpp>
 
-#include "dottorrent/mpmcqueue.hpp"
+#include "dottorrent/concurrent_queue.hpp"
 #include "dottorrent/data_chunk.hpp"
 #include "dottorrent/utils.hpp"
 #include "dottorrent/file_storage.hpp"
@@ -21,13 +21,15 @@ class chunk_reader
 public:
     using chunk_type = data_chunk;
     using data_type = typename data_chunk::data_type ;
-    using hash_queue = rigtorp::mpmc::Queue<chunk_type>;
-    using checksum_queue = rigtorp::mpmc::Queue<chunk_type>;
+//    using hash_queue = rigtorp::MPMCQueue<chunk_type>;
+//    using checksum_queue = rigtorp::MPMCQueue<chunk_type>;
+    using hash_queue = concurrent_queue<chunk_type>;
+    using checksum_queue = concurrent_queue<chunk_type>;
 
     using hash_queue_vector = std::vector<std::shared_ptr<hash_queue>>;
     using checksum_queue_vector = std::vector<std::shared_ptr<checksum_queue>>;
 
-    chunk_reader(file_storage& storage, std::size_t block_size, std::size_t max_memory);
+    chunk_reader(file_storage& storage, std::size_t block_size, std::size_t capacity);
 
     void register_hash_queue(std::shared_ptr<hash_queue> q);
 

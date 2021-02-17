@@ -5,7 +5,7 @@
 
 namespace dottorrent {
 
-class hasher
+class single_buffer_hasher
 {
 public:
     virtual void update(std::span<const std::byte> data) = 0;
@@ -24,7 +24,7 @@ public:
         return empty_set;
     }
 
-    virtual ~hasher() = default;
+    virtual ~single_buffer_hasher() = default;
 };
 
 }

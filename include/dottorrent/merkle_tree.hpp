@@ -27,6 +27,7 @@ public:
     using node_position = detail::merkle_node_position;
 
     explicit merkle_tree() noexcept = default;
+
     explicit merkle_tree(std::size_t leaf_nodes)
             : data_()
     {
@@ -40,12 +41,10 @@ public:
     }
 
     merkle_tree(const merkle_tree& other)
-        : data_(other.data_)
-    {}
+            : data_(other.data_) { }
 
     merkle_tree(merkle_tree&& other) noexcept
-            : data_(std::move(other.data_))
-    {}
+            : data_(std::move(other.data_)) { }
 
     merkle_tree& operator=(const merkle_tree& other)
     {
@@ -91,24 +90,60 @@ public:
     }
 
     /// Calculate the root and inner hashes from the leaf hashes.
-    void update(hasher& hasher)
+    void update(single_buffer_hasher& hasher)
     {
         for (std::size_t layer = tree_height(); layer > 0; --layer) {
-            for (std::size_t i = 0; i < nodes_in_layer(layer); ++i) {
+            for (std::size_t i = 0; i < nodes_in_layer(layer); ++ i) {
                 hasher.update(get_node(layer, i));
-                hasher.update(get_node(layer, ++i));
+                hasher.update(get_node(layer, ++ i));
 
-                value_type hash {};
+                value_type hash{};
                 hasher.finalize_to(hash);
                 set_node(layer-1, parent(i), hash);
             }
         }
     }
 
+#if defined(DOTTORRENT_USE_ISAL)
+    void update(multi_buffer_hasher& hasher)
+    {
+        for (std::size_t layer = tree_height(); layer > 0; -- layer) {
+            std::size_t n_nodes = nodes_in_layer(layer);
+
+            Expects(n_nodes % 2 == 0);
+            std::size_t n_jobs = n_nodes / 2;
+            hasher.resize(n_jobs);
+            std::size_t job_id = 0;
+
+            // Submit left child jobs
+            for (std::size_t i = 0; job_id < n_jobs; ++job_id, i+=2) {
+                hasher.submit_first(job_id, get_node(layer, i));
+            }
+
+            // Submit right child jobs
+            job_id = 0;
+            for (std::size_t i = 1; job_id < n_jobs; ++job_id, i+=2) {
+                hasher.submit_last(job_id, get_node(layer, i));
+            }
+            // Update parent nodes
+            job_id = 0;
+            for (std::size_t i = 0; job_id < n_jobs; ++job_id, i+=2) {
+                value_type hash{};
+                hasher.finalize_to(job_id, hash);
+                set_node(layer-1, parent(i), hash);
+            }
+        }
+    }
+#endif
+
     /// Calculate the root and inner hashes from the leaf hashes.
     void update()
     {
+#ifdef DOTTORRENT_USE_ISAL
+        auto hasher = make_multi_buffer_hasher(FN);
+#else
         auto hasher = make_hasher(FN);
+#endif
         update(*hasher);
     }
 
@@ -136,10 +171,22 @@ public:
     /// Return the node at given layer and index
      const value_type& get_node(std::size_t layer, std::size_t index) const
     {
-        Ensures(layer <= tree_height());
-        Ensures(index < nodes_in_layer(layer));
+        Expects(layer <= tree_height());
+        Expects(index < nodes_in_layer(layer));
         std::shared_lock lck{mutex_};
         return data_[get_flat_index(layer, index)];
+    }
+
+    std::span<const value_type> get_node_range(std::size_t layer, std::size_t first, std::size_t last)
+    {
+        Expects(layer <= tree_height());
+        Expects(first < nodes_in_layer(layer));
+        Expects(last <= nodes_in_layer(layer));
+        Expects(first <= last);
+        std::shared_lock lck{mutex_};
+        auto d_first = get_flat_index(layer, first);
+        auto d_last = get_flat_index(layer, last);
+        return std::span(&data_[d_first], &data_[d_last]);
     }
 
     const value_type& get_leaf(std::size_t index) const
@@ -204,7 +251,10 @@ private:
     }
 
     static constexpr std::size_t parent(std::size_t flat_idx) noexcept
-    { return (flat_idx - 1) / 2; }
+    {
+        if (flat_idx == 0) [[unlikely]] return 0;
+        return (flat_idx - 1) / 2;
+    }
 
     static constexpr std::size_t left_child(std::size_t flat_idx) noexcept
     { return (flat_idx * 2) + 1; }
