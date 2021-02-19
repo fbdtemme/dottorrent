@@ -107,7 +107,7 @@ private:
             assert(capacity >= size);
 
             for (size_type i = 0; i != size; ++i) {
-                queue_.emplace(std::invoke(Policy::construct));
+                queue_.push(std::invoke(Policy::construct));
             }
 
 //            assert(queue_.size() == initial_resources);
@@ -169,7 +169,7 @@ private:
         void recycle(value_ptr&& resource)
         {
             std::invoke(Policy::recycle, resource);
-            queue_.emplace(std::move(resource));
+            queue_.push(std::move(resource));
         }
 
     private:

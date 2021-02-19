@@ -32,8 +32,9 @@ void chunk_hasher_single_buffer::run(int thread_idx) {
     // otherwise discard all remaining work
     if (!cancelled_.load(std::memory_order_relaxed)) {
         while (queue_->try_pop(item)) {
-            if (item.piece_index == std::numeric_limits<std::uint32_t>::max() &&
-                item.file_index == std::numeric_limits<std::uint32_t>::max())
+            if (item.data == nullptr &&
+                    item.piece_index == std::numeric_limits<std::uint32_t>::max() &&
+                    item.file_index == std::numeric_limits<std::uint32_t>::max())
             {
                 break;
             }

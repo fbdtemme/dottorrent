@@ -32,7 +32,7 @@ storage_hasher::storage_hasher(file_storage& storage, const storage_hasher_optio
         , threads_(options.threads)
         , io_block_size_()
         , queue_capacity_()
-        , enable_multi_buffer_hashing(options.enable_multi_buffer_hashing)
+        , enable_multi_buffer_hashing_(options.enable_multi_buffer_hashing)
 {
     if (storage.piece_size() == 0)
         storage.set_piece_size(choose_piece_size(storage));
@@ -43,17 +43,17 @@ storage_hasher::storage_hasher(file_storage& storage, const storage_hasher_optio
     if (options.min_io_block_size) {
         io_block_size_ = std::max(piece_size, *options.min_io_block_size);
     } else {
-        io_block_size_ = 8 * storage.piece_size();
+        io_block_size_ = 8 * piece_size;
     }
 #else
     io_block_size_ = std::max(piece_size, options.min_io_block_size ? *options.min_io_block_size : 1_MiB);
  #endif
 
     if (options.max_memory) {
-        queue_capacity_ = std::max(std::size_t(2), *options.max_memory / io_block_size_);
+        queue_capacity_ = std::max(std::size_t(3), *options.max_memory / io_block_size_);
     }
     else {
-        queue_capacity_ = std::max(std::size_t(2), 2*threads_);
+        queue_capacity_ = std::max(std::size_t(3), 3*threads_);
     }
 
     Expects(protocol_ != dottorrent::protocol::none);
@@ -108,7 +108,7 @@ void storage_hasher::start() {
 
     if (protocol_ == protocol::v1) {
 #ifdef DOTTORRENT_USE_ISAL
-        if (enable_multi_buffer_hashing)
+        if (enable_multi_buffer_hashing_)
             hasher_ = std::make_unique<v1_chunk_hasher_mb>(storage_, queue_capacity_, threads_);
         else
             hasher_ = std::make_unique<v1_chunk_hasher_sb>(storage_, queue_capacity_, threads_);
@@ -125,7 +125,7 @@ void storage_hasher::start() {
     } else {
 
 #ifdef DOTTORRENT_USE_ISAL
-        if (enable_multi_buffer_hashing)
+        if (enable_multi_buffer_hashing_)
             hasher_ = std::make_unique<v2_chunk_hasher_mb>(
                     storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
         else

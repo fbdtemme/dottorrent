@@ -24,7 +24,10 @@ add_executable(dottorrent-tests
 )
 
 
-target_link_libraries(dottorrent-tests Catch2::Catch2 dottorrent)
+target_link_libraries(dottorrent-tests
+        Catch2::Catch2
+        dottorrent
+)
 
 target_include_directories(dottorrent-tests PRIVATE ../src)
 target_compile_definitions(dottorrent-tests PRIVATE

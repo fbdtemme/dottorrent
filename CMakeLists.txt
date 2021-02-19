@@ -56,8 +56,9 @@ add_library(dottorrent
 
 
 add_library(dottorrent::dottorrent ALIAS dottorrent)
-
 target_compile_features(dottorrent PUBLIC cxx_std_20)
+
+include(external/external.cmake)
 
 if (WIN32)
     message(STATUS "Windows platform detected: Setting default crypto backend to WinCNG")
@@ -78,20 +79,12 @@ elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wincng")
 endif()
 
 
-if (DOTTORRENT_CRYPTO_MULTI_BUFFER)
-    include(FindPkgConfig)
-    pkg_check_modules(ISAL_CRYPTO                libisal_crypto)
-    target_link_libraries(${PROJECT_NAME}        PUBLIC ${ISAL_CRYPTO_LIBRARIES})
-    target_include_directories(${PROJECT_NAME}   PUBLIC ${ISAL_CRYPTO_INCLUDE_DIRS})
+if (DOTTORRENT_CRYPTO_MULTIBUFFER)
+    target_link_libraries(${PROJECT_NAME}        PUBLIC ISAL::Crypto)
+    get_property(dirs TARGET ${PROJECT_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
     target_compile_definitions(${PROJECT_NAME}   PUBLIC DOTTORRENT_USE_ISAL)
     message(STATUS "Using multibuffer hashing with Intel ISA-L")
 endif()
-
-if (DOTTORRENT_NATIVE_CHUNK_READER)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_NATIVE_CHUNK_READER)
-endif()
-
-include(external/external.cmake)
 
 find_package(Threads REQUIRED)
 
@@ -118,7 +111,7 @@ if (DOTTORRENT_BUILD_COVERAGE)
 endif()
 
 if (DOTTORRENT_BUILD_TESTS)
-    add_subdirectory(tests)
+add_subdirectory(tests)
 endif()
 
 if (DOTTORRENT_INSTALL)

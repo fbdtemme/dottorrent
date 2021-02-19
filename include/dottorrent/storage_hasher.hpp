@@ -120,7 +120,7 @@ private:
     std::size_t threads_;
     std::size_t io_block_size_;
     std::size_t queue_capacity_;
-    bool enable_multi_buffer_hashing;
+    bool enable_multi_buffer_hashing_;
 
     std::unique_ptr<chunk_reader> reader_;
     std::unique_ptr<chunk_processor> hasher_;

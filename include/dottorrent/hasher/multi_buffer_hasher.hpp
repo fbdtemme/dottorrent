@@ -5,8 +5,6 @@
 #include <cstring>
 
 #include <gsl-lite/gsl-lite.hpp>
-#include <isa-l_crypto/sha1_mb.h>
-#include <isa-l_crypto/mh_sha1.h>
 
 class multi_buffer_hasher
 {

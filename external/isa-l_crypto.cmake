@@ -1,13 +1,70 @@
- include(ExternalProject)
- ExternalProject_Add(isa-l_crypto-populate
-     GIT_REPOSITORY "https://github.com/intel/isal-crypto.git"
-     GIT_TAG "master"
-     SOURCE_DIR          "${CMAKE_CURRENT_BINARY_DIR}/_deps/isa-l_crypto-src"
-     SOURCE_DIR          "${CMAKE_CURRENT_BINARY_DIR}/_deps/isa-l_crypto-build"
-     CONFIGURE_COMMAND   ""
-     BUILD_COMMAND       ""
-     INSTALL_COMMAND     ""
-     TEST_COMMAND        ""
-     USES_TERMINAL_DOWNLOAD  YES
-     USES_TERMINAL_UPDATE    YES
- )
+if (TARGET ISAL::Crypto)
+    log_target_found(ISAL::Crypto)
+    return()
+endif()
+
+find_package(ISALCrypto QUIET)
+if (ISALCrypto_FOUND)
+    log_module_found(ISALCrypto)
+    return()
+endif()
+
+include(ExternalProject)
+include(GNUInstallDirs)
+find_program(MAKE_EXECUTABLE NAMES make nmake)
+
+set(isal_crypto_install_dir "${CMAKE_CURRENT_BINARY_DIR}/_deps/isa-l_crypto-install")
+set(isal_crypto_install_libdir "${isal_crypto_install_dir}/${CMAKE_INSTALL_LIBDIR}")
+
+
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/isa-l_crypto)
+    log_dir_found(isa-l_crypto)
+    set(isal_source_dir "${CMAKE_CURRENT_LIST_DIR}/isa-l_crypto")
+
+    ExternalProject_Add(build-isa-l_crypto
+            SOURCE_DIR          ${isal_source_dir}
+            BUILD_IN_SOURCE     ON
+            CONFIGURE_COMMAND   "./autogen.sh"
+            COMMAND             ./configure --prefix=${isal_crypto_install_dir} --libdir=${isal_crypto_install_libdir}
+            BUILD_COMMAND       ${MAKE_EXECUTABLE} .
+            INSTALL_COMMAND     ${MAKE_EXECUTABLE} install
+            TEST_COMMAND        ""
+            USES_TERMINAL_DOWNLOAD  YES
+            USES_TERMINAL_UPDATE    YES
+            )
+else()
+    log_fetch("isa-l_crypto")
+    set(isal_source_dir "${CMAKE_CURRENT_BINARY_DIR}/_deps/isa-l_crypto-src")
+
+    ExternalProject_Add(build-isa-l_crypto
+            GIT_REPOSITORY "https://github.com/intel/isa-l_crypto.git"
+            GIT_TAG "master"
+            SOURCE_DIR          ${isal_source_dir}
+            BUILD_IN_SOURCE     ON
+            CONFIGURE_COMMAND   "./autogen.sh"
+            COMMAND             ./configure --prefix=${isal_crypto_install_dir} --libdir=${isal_crypto_install_libdir}
+            BUILD_COMMAND       ${MAKE_EXECUTABLE} .
+            INSTALL_COMMAND     ${MAKE_EXECUTABLE} install
+            TEST_COMMAND        ""
+            USES_TERMINAL_DOWNLOAD  YES
+            USES_TERMINAL_UPDATE    YES
+    )
+endif()
+
+add_library(ISAL::Crypto STATIC IMPORTED GLOBAL)
+set_property(
+    TARGET ISAL::Crypto
+    PROPERTY IMPORTED_LOCATION ${isal_crypto_install_libdir}/libisal_crypto.a
+)
+set_property(
+    TARGET ISAL::Crypto
+    PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${isal_source_dir}/include"
+)
+
+add_dependencies(ISAL::Crypto build-isa-l_crypto)
+add_dependencies(dottorrent ISAL::Crypto)
+
+#if (DOTTORRENT_INSTALL)
+#    install(DIRECTORY ${isal_crypto_install_dir}
+#            DESTINATION ${CMAKE_INSTALL_PREFIX})
+#endif()
