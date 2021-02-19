@@ -15,7 +15,7 @@ include(GNUInstallDirs)
 option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
 option(DOTTORRENT_BUILD_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
-                          "The cryptographic library to link agains. Options are: openssl libgcrypt, wincng")
+                          "The cryptographic library to link agains. Options are: openssl, libgcrypt, wincng")
 
 option(DOTTORRENT_CRYPTO_MULTIBUFFER "Enable multibuffer hashing with Intel ISA-L" OFF)
 option(DOTTORRENT_INSTALL            "Generate an install target" ON)

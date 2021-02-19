@@ -35,6 +35,8 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/isa-l_crypto)
 else()
     log_fetch("isa-l_crypto")
     set(isal_source_dir "${CMAKE_CURRENT_BINARY_DIR}/_deps/isa-l_crypto-src")
+    # Create include directory at configure time to make sure the INTERFACE_INCLUDE_DIRECTORY exists
+    file(MAKE_DIRECTORY ${isal_source_dir}/include)
 
     ExternalProject_Add(build-isa-l_crypto
             GIT_REPOSITORY "https://github.com/intel/isa-l_crypto.git"
