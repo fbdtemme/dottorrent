@@ -20,6 +20,11 @@ set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
 option(DOTTORRENT_CRYPTO_MULTIBUFFER "Enable multibuffer hashing with Intel ISA-L" OFF)
 option(DOTTORRENT_INSTALL            "Generate an install target" ON)
 
+# Disable Intel ISA-L on arm systems
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL ARM)
+    set(DOTTORRENT_CRYPTO_MULTIBUFFER CACHE BOOL "Enable multibuffer hashing with Intel ISA-L" OFF FORCE)
+endif()
+
 # add cmake directory for Find* modules
 cmake_policy(SET CMP0076 NEW)
 
