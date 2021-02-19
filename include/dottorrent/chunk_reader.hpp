@@ -21,8 +21,6 @@ class chunk_reader
 public:
     using chunk_type = data_chunk;
     using data_type = typename data_chunk::data_type ;
-//    using hash_queue = rigtorp::MPMCQueue<chunk_type>;
-//    using checksum_queue = rigtorp::MPMCQueue<chunk_type>;
     using hash_queue = concurrent_queue<chunk_type>;
     using checksum_queue = concurrent_queue<chunk_type>;
 
@@ -40,7 +38,7 @@ public:
 
     /// Signal the reader to stop reading new pieces.
     /// @note This does not join the thread and wait must be called after.
-    void request_cancellation() noexcept;;
+    void request_cancellation() noexcept;
 
     /// Block until the reader completes all work or terminates because of a cancellation request.
     void wait();

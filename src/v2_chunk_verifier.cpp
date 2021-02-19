@@ -162,7 +162,7 @@ const std::vector<std::uint8_t>& v2_chunk_verifier::result() const noexcept
     return piece_map_;
 }
 
-const double v2_chunk_verifier::percentage(std::size_t file_index) const noexcept
+double v2_chunk_verifier::percentage(std::size_t file_index) const noexcept
 {
     Expects(file_index < file_offsets_.size());
     constexpr std::size_t max_size_t = std::numeric_limits<std::size_t>::max();

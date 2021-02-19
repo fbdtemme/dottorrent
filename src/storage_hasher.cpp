@@ -182,7 +182,10 @@ void storage_hasher::wait()
     if (done())
         throw std::runtime_error("hasher already done");
 
+    Expects(hasher_->running());
     reader_->wait();
+    Expects(hasher_->running());
+
     // no pieces will be added after the reader finishes.
     // So we can signal hashers that they can shutdown after
     // finishing all remaining work

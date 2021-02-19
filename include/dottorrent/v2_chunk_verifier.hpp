@@ -14,7 +14,7 @@ public:
 
     const std::vector<std::uint8_t>& result() const noexcept override;
 
-    const double percentage(std::size_t file_index) const noexcept override;
+    double percentage(std::size_t file_index) const noexcept override;
 
 protected:
     void hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk) override;

@@ -6,12 +6,12 @@
 #include <type_traits>
 #include <cassert>
 
-#include <dottorrent/concurrent_queue.hpp>
+#include "dottorrent/concurrent_queue.hpp"
 
 namespace dottorrent::pool {
 
 template <typename T>
-    requires std::is_default_constructible<T>::value
+requires std::is_default_constructible<T>::value
 struct object_pool_policy
 {
     using value_type = T;
@@ -37,13 +37,6 @@ public:
     using queue_type = concurrent_queue<value_ptr>;
 
 public:
-    /// Default constructor, we only want this to be available
-    /// i.e. the shared_object_pool to be default constructible if the
-    /// value_type we build is default constructible.
-    object_pool()
-            : pool_(std::make_shared<impl>(-1))
-    { }
-
     explicit object_pool(size_type capacity)
             : pool_(std::make_shared<impl>(capacity))
     { }
@@ -96,13 +89,13 @@ private:
     {
         /// @copydoc shared_object_pool::shared_object_pool()
         explicit impl(size_type capacity)
-            : queue_(capacity)
-            , resources_left_(capacity)
+                : queue_(capacity)
+                , resources_left_(capacity)
         {}
 
         explicit impl(size_type capacity, size_type size)
-            : queue_(capacity)
-            , resources_left_(capacity - size)
+                : queue_(capacity)
+                , resources_left_(capacity - size)
         {
             assert(capacity >= size);
 
@@ -132,7 +125,7 @@ private:
                 resources_left_.fetch_sub(1, std::memory_order_relaxed);
                 resource = std::invoke(Policy::construct);
             } else {
-                 queue_.pop(resource);
+                queue_.pop(resource);
             }
             // Here we create a std::shared_ptr<T> with a naked
             // pointer to the resource and a custom deleter
@@ -186,8 +179,8 @@ private:
     {
         /// @param pool. A weak_ptr to the pool
         deleter(std::weak_ptr<impl> pool, value_ptr resource)
-            : pool_(std::move(pool))
-            , resource_(std::move(resource))
+                : pool_(std::move(pool))
+                , resource_(std::move(resource))
         {
             assert(!pool_.expired());
             assert(resource_);

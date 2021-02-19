@@ -64,7 +64,7 @@ const std::vector<std::uint8_t>& v1_chunk_verifier::result() const noexcept
     return piece_map_;
 }
 
-const double v1_chunk_verifier::percentage(std::size_t file_index) const noexcept
+double v1_chunk_verifier::percentage(std::size_t file_index) const noexcept
 {
     file_storage& storage = storage_;
     auto [first, last] = storage.get_pieces_offsets(file_index);

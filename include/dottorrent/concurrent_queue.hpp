@@ -2,20 +2,15 @@
 
 #include <atomic>
 #include <cassert>
-#include <condition_variable>
 #include <cstddef> // offsetof
 #include <limits>
 #include <memory>
-#include <mutex>
 #include <new> // std::hardware_destructive_interference_size
-#include <optional>
-#include <queue>
-#include <ranges>
 #include <stdexcept>
-#include <type_traits>
-#include <utility>
-#include <vector>
-
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <deque>
 
 namespace dottorrent {
 
@@ -36,7 +31,7 @@ public:
             not_full_.wait(lk, [this]() { return queue_.size() < capacity_; });
             queue_.push(item);
         }
-        not_empty_.notify_one();
+        not_empty_.notify_all();
     }
 
     void push(T&& item) {
@@ -45,7 +40,7 @@ public:
             not_full_.wait(lk, [this]() { return queue_.size() < capacity_; });
             queue_.push(std::move(item));
         }
-        not_empty_.notify_one();
+        not_empty_.notify_all();
     }
 
     bool try_push(T &&item) {
@@ -55,7 +50,7 @@ public:
                 return false;
             queue_.push(std::move(item));
         }
-        not_empty_.notify_one();
+        not_empty_.notify_all();
         return true;
     }
 
@@ -66,7 +61,7 @@ public:
             item = std::move(queue_.front());
             queue_.pop();
         }
-        not_full_.notify_one();
+        not_full_.notify_all();
     }
 
     bool try_pop(T &item) {
@@ -77,7 +72,7 @@ public:
             item = std::move(queue_.front());
             queue_.pop();
         }
-        not_full_.notify_one();
+        not_full_.notify_all();
         return true;
     }
 private:
@@ -87,5 +82,6 @@ private:
     size_t capacity_;
     std::queue<T, std::deque<T, Allocator>> queue_;
 };
+
 
 } // namespace dottorrent

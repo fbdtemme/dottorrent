@@ -47,6 +47,7 @@ void v1_chunk_reader::run()
                       static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
                       chunk_
                 });
+                chunk_.reset();
                 // recycle a new chunk from the pool
                 chunk_ = pool_.get();
                 chunk_->resize(chunk_size_);
@@ -108,6 +109,7 @@ void v1_chunk_reader::handle_missing_file()
                   static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
                   chunk_
             });
+            chunk_.reset();
             // recycle a new chunk from the pool
             chunk_ = pool_.get();
             chunk_->resize(chunk_size_);

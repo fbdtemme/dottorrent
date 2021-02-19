@@ -1,10 +1,7 @@
 # dottorrent
 
 A library for working with BitTorrent metafiles.
-
-## Status
-
-This library is in development and not suitable for general use.
+This library is used in the [torrenttools](https://github.com/fbdtemme/torrenttools) project.
 
 ## Building
 

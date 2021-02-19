@@ -52,7 +52,8 @@ void v2_chunk_reader::run()
             // push chunk to consumers
             push({static_cast<std::uint32_t>(piece_index_),
                   static_cast<std::uint32_t>(file_index_),
-                  std::move(chunk)});
+                  chunk});
+            chunk.reset();
             // recycle a new chunk from the pool
             chunk = pool_.get();
             chunk->resize(chunk_size_);
@@ -70,7 +71,7 @@ void v2_chunk_reader::run()
 
 
 void v2_chunk_reader::push(const data_chunk& chunk) {
-    Expects(0 <= chunk.piece_index && chunk.piece_index < storage_.get().piece_count());
+    Expects(chunk.piece_index < storage_.get().piece_count());
 
     // hasher queues
     for (auto& queue : hash_queues_) {

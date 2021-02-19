@@ -192,7 +192,6 @@ public:
 
     auto contains(std::string_view url) const -> bool
     {
-        auto begin_range = announce_list_.begin();
         for (std::size_t tier = 0; tier <= tier_count(); ++tier) {
             auto range = get_tier(tier);
             bool exists = std::binary_search(range.first, range.second, url, url_comparator);

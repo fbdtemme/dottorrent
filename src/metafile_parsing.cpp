@@ -629,7 +629,7 @@ void parse_piece_layers_v2(const T& data, metafile& m)
             std::vector<sha256_hash> layers;
             std::string_view layer_string = get_string(it2->second);
 
-            for (auto idx = 0; idx < layer_string.size(); idx += sha256_hash::size_bytes) {
+            for (std::size_t idx = 0; idx < layer_string.size(); idx += sha256_hash::size_bytes) {
                 layers.emplace_back(layer_string.substr(idx, sha256_hash::size_bytes));
             }
             f.set_piece_layer(std::span(layers));

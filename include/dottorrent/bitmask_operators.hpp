@@ -7,7 +7,7 @@ template <>                                      \
 struct enum_traits<x> {              \
     static constexpr bool is_bitmask = true;    \
 };                                              \
-} // namespace dottorrent   \
+}
 
 
 namespace dottorrent {

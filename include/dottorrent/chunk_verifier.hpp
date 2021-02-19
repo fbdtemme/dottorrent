@@ -21,7 +21,7 @@ public:
     // For v2 torrents each block is equal to 16 KiB.
     virtual const std::vector<std::uint8_t>& result() const noexcept = 0;
 
-    virtual const double percentage(std::size_t file_index) const noexcept = 0;
+    virtual double percentage(std::size_t file_index) const noexcept = 0;
 };
 
 }

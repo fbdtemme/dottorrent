@@ -24,34 +24,34 @@ option(DOTTORRENT_INSTALL            "Generate an install target" ON)
 cmake_policy(SET CMP0076 NEW)
 
 add_library(dottorrent
+        src/announce_url_list.cpp
+        src/chunk_hasher_multi_buffer.cpp
+        src/chunk_hasher_single_buffer.cpp
+        src/chunk_processor_base.cpp
         src/chunk_reader.cpp
         src/file_entry.cpp
         src/file_storage.cpp
+        src/hasher/backends/gcrypt.cpp
+        src/hasher/backends/openssl.cpp
+        src/hasher/backends/wincng.cpp
+        src/magnet_uri.cpp
         src/metafile.cpp
         src/metafile_parsing.cpp
         src/metafile_serialization.cpp
+        src/percent_encode.cpp
         src/storage_hasher.cpp
-        src/v1_chunk_reader.cpp
-        src/v1_chunk_reader_linux.cpp
-        src/v1_chunk_verifier.cpp
+        src/storage_verifier.cpp
         src/v1_checksum_hasher.cpp
+        src/v1_chunk_hasher_mb.cpp
+        src/v1_chunk_hasher_sb.cpp
+        src/v1_chunk_reader.cpp
+        src/v1_chunk_verifier.cpp
+        src/v2_checksum_hasher.cpp
+        src/v2_chunk_hasher_mb.cpp
+        src/v2_chunk_hasher_mixin.cpp
+        src/v2_chunk_hasher_sb.cpp
         src/v2_chunk_reader.cpp
         src/v2_chunk_verifier.cpp
-        src/v2_checksum_hasher.cpp
-        src/hasher/backends/openssl.cpp
-        src/hasher/backends/gcrypt.cpp
-        src/hasher/backends/wincng.cpp
-        src/storage_verifier.cpp
-        src/announce_url_list.cpp
-        src/magnet_uri.cpp
-        src/percent_encode.cpp
-        src/chunk_hasher_single_buffer.cpp
-        src/chunk_hasher_multi_buffer.cpp
-        src/v2_chunk_hasher_mixin.cpp
-        src/v1_chunk_hasher_sb.cpp
-        src/v1_chunk_hasher_mb.cpp
-        src/v2_chunk_hasher_sb.cpp
-        src/v2_chunk_hasher_mb.cpp
 )
 
 

@@ -176,12 +176,12 @@ const std::vector<std::uint8_t>& storage_verifier::result() const noexcept
     return verifier_->result();
 }
 
-const double storage_verifier::percentage(std::size_t file_index) const noexcept
+double storage_verifier::percentage(std::size_t file_index) const noexcept
 {
     return verifier_->percentage(file_index);
 }
 
-const double storage_verifier::percentage(const file_entry& entry) const
+double storage_verifier::percentage(const file_entry& entry) const
 {
     file_storage storage = storage_;
 

@@ -39,6 +39,7 @@ void chunk_hasher_single_buffer::run(int thread_idx) {
                 break;
             }
             hash_chunk(hashers, item);
+            item.data.reset();
         }
     }
 
