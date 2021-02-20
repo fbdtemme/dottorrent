@@ -39,8 +39,8 @@ else()
     file(MAKE_DIRECTORY ${isal_source_dir}/include)
 
     ExternalProject_Add(build-isa-l_crypto
-            GIT_REPOSITORY "https://github.com/intel/isa-l_crypto.git"
-            GIT_TAG "master"
+            GIT_REPOSITORY      "https://github.com/intel/isa-l_crypto.git"
+            GIT_TAG             "master"
             SOURCE_DIR          ${isal_source_dir}
             BUILD_IN_SOURCE     ON
             CONFIGURE_COMMAND   "./autogen.sh"
@@ -64,9 +64,3 @@ set_property(
 )
 
 add_dependencies(ISAL::Crypto build-isa-l_crypto)
-add_dependencies(dottorrent ISAL::Crypto)
-
-#if (DOTTORRENT_INSTALL)
-#    install(DIRECTORY ${isal_crypto_install_dir}
-#            DESTINATION ${CMAKE_INSTALL_PREFIX})
-#endif()
