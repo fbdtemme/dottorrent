@@ -15,9 +15,6 @@ void v2_chunk_reader::run()
     auto chunk = pool_.get();
     chunk->resize(chunk_size_);
 
-    // Throw exceptions on IO/ errors
-    f_.exceptions(std::ios::failbit | std::ios::badbit);
-
     for (const fs::path& file_path: file_paths) {
         const file_entry& file_entry = storage.at(file_index_);
 
@@ -65,6 +62,9 @@ void v2_chunk_reader::run()
             piece_index_ += pieces_per_chunk;
 
             if (f_.eof()) break;
+            if (f_.fail()) {
+                throw std::runtime_error(fmt::format("I/O error reading: {}", file_entry.path()));
+            }
         }
         f_.close();
         f_.clear();
