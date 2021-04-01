@@ -9,8 +9,6 @@ namespace dottorrent
 class v1_chunk_verifier : public chunk_verifier
 {
 public:
-    using base = v1_chunk_hasher_sb;
-
     v1_chunk_verifier(file_storage& storage, std::size_t thread_count);
 
     const std::vector<std::uint8_t>& result() const noexcept override;

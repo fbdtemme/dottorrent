@@ -28,8 +28,6 @@ protected:
                             std::size_t file_index, const sha1_hash& piece_hash);
 
 
-
-
     std::vector<merkle_tree<hash_function::sha256>> merkle_trees_ {};
     /// Vector with the count of hashed bytes per file
     std::vector<std::atomic<std::size_t>> file_bytes_hashed_ {};

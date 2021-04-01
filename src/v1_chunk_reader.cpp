@@ -16,6 +16,9 @@ void v1_chunk_reader::run()
     chunk_ = pool_.get();
     chunk_->resize(chunk_size_);
 
+    // Throw exceptions on IO/ errors
+    f_.exceptions(std::ios::failbit | std::ios::badbit);
+
     for (const fs::path& file_path: file_paths) {
         const file_entry& file_entry = storage.at(file_index_);
 
