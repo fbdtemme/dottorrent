@@ -63,7 +63,7 @@ struct magnet_uri
 
     const std::vector<std::string>& peer_adresses() const noexcept
     {
-        return peer_adresses_;
+        return peer_addresses_;
     }
 
     const std::string& manifest() const noexcept
@@ -160,17 +160,17 @@ struct magnet_uri
 
     void add_peer_adress(const std::string& peer_adress)
     {
-        peer_adresses_.emplace_back(peer_adress);
+        peer_addresses_.emplace_back(peer_adress);
     }
     
     void add_peer_address(std::string&& peer_adress)
     {
-        peer_adresses_.emplace_back(std::move(peer_adress));
+        peer_addresses_.emplace_back(std::move(peer_adress));
     }
     
     void add_peer_address(std::string_view address, std::uint16_t port)
     {
-        peer_adresses_.emplace_back(fmt::format("{}:{}", address, port));
+        peer_addresses_.emplace_back(fmt::format("{}:{}", address, port));
     }
 
 private:
@@ -205,7 +205,7 @@ private:
     /// This parameter can be included to initiate a direct metadata transfer between two clients while reducing the need for external peer sources.
     /// It should only be included if the client can discover its public IP address and determine its reachability.
     /// Note: Since no URI scheme identifier has been allocated for bittorrent xs= is not used for this purpose.
-    std::vector<std::string> peer_adresses_;
+    std::vector<std::string> peer_addresses_;
     //mt	Manifest Topic	Link to the metafile that contains a list of magneto (MAGMA – MAGnet MAnifest); i.e. a link to a list of links
     //mt=http://example.org/all-my-favorites.rss
     //mt=urn:sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ
@@ -295,19 +295,22 @@ void encode_magnet_uri(const magnet_uri& magnet, OutputIterator out)
 }
 
 
-std::string encode_magnet_uri(const magnet_uri& magnet);
-
-
 namespace detail {
 
-std::vector<std::string_view> split_query_string(std::string_view uri_query_string);
+std::vector<std::string_view>
+split_query_string(std::string_view uri_query_string);
 
 std::pair<std::string_view, std::string_view>
 split_key_value_pair(std::string_view uri_query_string);
 
-std::vector<std::string_view> split_keywords_string(std::string_view keywords);
+std::vector<std::string_view>
+split_keywords_string(std::string_view keywords);
 
 }
+
+
+std::string encode_magnet_uri(const magnet_uri& magnet);
+
 
 /// Create a magnet uri object from a magnet URI string
 /// @uri The magnet URI string to parse

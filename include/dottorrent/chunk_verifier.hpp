@@ -16,7 +16,7 @@ class chunk_verifier : public chunk_hasher_single_buffer
 {
 public:
     using chunk_hasher_single_buffer::chunk_hasher_single_buffer;
-    // Return for each block weither it is valid or not.
+    // Return for each block wether it is valid or not.
     // For v1 torrents each block is equal to the piece size.
     // For v2 torrents each block is equal to 16 KiB.
     virtual const std::vector<std::uint8_t>& result() const noexcept = 0;
