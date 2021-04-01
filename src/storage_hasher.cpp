@@ -5,12 +5,6 @@
 
 #include "dottorrent/storage_hasher.hpp"
 
-
-
-#if defined(__linux__) && defined(DOTTORRENT_NATIVE_CHUNK_READER)
-    #include "dottorrent/v1_chunk_reader_linux.hpp"
-#endif
-
 #include "dottorrent/v1_chunk_reader.hpp"
 #include "dottorrent/v2_chunk_reader.hpp"
 
@@ -234,7 +228,7 @@ std::size_t storage_hasher::bytes_done() const noexcept
 }
 
 
-storage_hasher::file_progress_data storage_hasher::current_file_progress() const noexcept
+file_progress_data storage_hasher::current_file_progress() const noexcept
 {
     const auto& storage = storage_.get();
     const auto bytes = bytes_done();

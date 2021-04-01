@@ -23,6 +23,7 @@
 #include "dottorrent/literals.hpp"
 #include "dottorrent/file_entry.hpp"
 #include "dottorrent/file_storage.hpp"
+#include "dottorrent/file_progress_data.hpp"
 
 #include "dottorrent/data_chunk.hpp"
 #include "dottorrent/v1_chunk_reader.hpp"
@@ -112,15 +113,6 @@ public:
     /// Return the number of bytes hashed by the v1 or v2 hasher,
     /// or the average between the two for hybrid torrents.
     std::size_t bytes_done() const noexcept;
-
-    /// Get information about the file currently being hashed.
-    /// @returns A pair with a pointer to the file_entry and
-    ///     the number of bytes hashed for this file
-    struct file_progress_data
-    {
-        std::size_t file_index;
-        std::size_t bytes_hashed;
-    };
 
     file_progress_data current_file_progress() const noexcept;
 

@@ -151,7 +151,7 @@ std::size_t storage_verifier::bytes_done() const noexcept
 }
 
 
-storage_verifier::file_progress_data storage_verifier::current_file_progress() const noexcept
+file_progress_data storage_verifier::current_file_progress() const noexcept
 {
     const auto& storage = storage_.get();
     const auto bytes = bytes_done();
