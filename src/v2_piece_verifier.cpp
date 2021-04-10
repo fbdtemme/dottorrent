@@ -65,7 +65,10 @@ double v2_piece_verifier::percentage(std::size_t file_index) const noexcept {
     auto first_piece_map_index = std::transform_reduce(
             storage.begin(), std::next(storage.begin(), file_index),
             0ul, std::plus<>{},
-            [](const file_entry& e) { return std::max(std::size_t(1), e.piece_layer().size()); });
+            [](const file_entry& e) {
+                if (e.is_padding_file()) return std::size_t(0);
+                return std::max(std::size_t(1), e.piece_layer().size());
+            });
 
     auto n_complete_pieces = std::count(
             std::next(piece_map_.begin(), first_piece_map_index),
@@ -91,12 +94,26 @@ void v2_piece_verifier::initialize_offsets_and_trees() {
         if (entry.is_padding_file()) {
             // add en empty merkly tree to make sure file_indices match merkle tree indices.
             merkle_trees_.emplace_back();
-            file_offsets_.emplace_back(std::numeric_limits<std::size_t>::max());
+            auto offset = file_offsets_.back();
+            file_offsets_.back() = std::numeric_limits<std::size_t>::max();
+            file_offsets_.push_back(offset);
         }
         else {
             auto& m = merkle_trees_.emplace_back(block_count);
             auto offset = std::max(std::size_t(1), entry.piece_layer().size());
-            file_offsets_.push_back(file_offsets_.back() + offset);
+
+            // get the offset of the last non-padding file
+            std::size_t previous_offset = 0;
+            // check if last offset is a padding file
+            if (file_offsets_.size() == 0) {
+                previous_offset = 0;
+            }
+            else if (file_offsets_.back() == std::numeric_limits<std::size_t>::max()) {
+                previous_offset = *std::prev(file_offsets_.end(), 2);
+            } else {
+                previous_offset = *std::prev(file_offsets_.end(), 1);
+            }
+            file_offsets_.push_back(previous_offset + offset);
         }
     }
 
@@ -104,11 +121,16 @@ void v2_piece_verifier::initialize_offsets_and_trees() {
 
     auto piece_map_size = 0;
     for (const auto& entry : storage) {
+        if (entry.is_padding_file())
+            continue;
+
         auto s = entry.piece_layer().size();
         if (s != 0) {
             piece_map_size += s;
-        } else {
+        }
+        else {
             // we have a file smaller then the piece size with only a root hash.
+            // or a padding file
             piece_map_size += 1;
         }
     }
@@ -158,8 +180,10 @@ void v2_piece_verifier::verify_piece_layers_and_root(HasherType& hasher, std::si
     bool whole_file_complete = entry.pieces_root() == tree.root();
     bool is_single_piece_file = entry.piece_layer().size() == 0;
 
+
     if (whole_file_complete) {
         if (is_single_piece_file) {
+            Expects(entry_index < piece_map_.size());
             piece_map_[entry_index] = 1;
         }
         else {
@@ -168,6 +192,7 @@ void v2_piece_verifier::verify_piece_layers_and_root(HasherType& hasher, std::si
     }
     else {
         if (is_single_piece_file) {
+            Expects(entry_index < piece_map_.size());
             piece_map_[entry_index] = 0;
         }
         else {
