@@ -14,7 +14,9 @@ include(GNUInstallDirs)
 option(DOTTORRENT_TESTS      "Build tests" ON)
 option(DOTTORRENT_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
-    "The cryptographic library to link against. Options are: openssl, wincng, wolfssl, isal")
+    "The cryptographic library to link against. Options are: openssl, wincng, wolfssl")
+set(DOTTORRENT_MB_CRYPTO_LIB "openssl" CACHE STRING
+        "The multibuffer cryptographic library to link against. Options are: none, isal")
 
 option(DOTTORRENT_INSTALL            "Generate an install target" ON)
 
@@ -69,6 +71,7 @@ if (WIN32)
 endif()
 
 string(TOLOWER ${DOTTORRENT_CRYPTO_LIB} DOTTORRENT_CRYPTO_LIB)
+string(TOLOWER ${DOTTORRENT_MB_CRYPTO_LIB} DOTTORRENT_MB_CRYPTO_LIB)
 
 if (DOTTORRENT_CRYPTO_LIB STREQUAL "openssl")
     find_package(OpenSSL REQUIRED)
@@ -86,16 +89,16 @@ elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wolfssl")
     target_link_libraries(${PROJECT_NAME} PUBLIC wolfssl)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WOLFSSL)
     message(STATUS "Using cryptographic library: wolfSSL")
+else()
+    message(FATAL_ERROR "Unrecognised crypto library: ${DOTTORRENT_CRYPTO_LIB}")
+endif()
 
-elseif (DOTTORRENT_CRYPTO_LIB STREQUAL "isal")
+if (DOTTORRENT_MB_CRYPTO_LIB STREQUAL "isal")
     include(${CMAKE_CURRENT_LIST_DIR}/external/isa-l_crypto.cmake)
     target_link_libraries(${PROJECT_NAME}        PUBLIC ISAL::Crypto)
     get_property(dirs TARGET ${PROJECT_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
     target_compile_definitions(${PROJECT_NAME}   PUBLIC DOTTORRENT_USE_ISAL)
-    message(STATUS "Using cryptographic library: Intel ISA-L")
-
-else()
-    message(FATAL_ERROR "Unrecognised crypto library: ${DOTTORRENT_CRYPTO_LIB}")
+    message(STATUS "Using multibuffer cryptographic library: Intel ISA-L")
 endif()
 
 find_package(Threads REQUIRED)
@@ -121,7 +124,7 @@ if (DOTTORRENT_BUILD_COVERAGE)
     set(CMAKE_C_FLAGS --coverage)
 endif()
 
-if (DOTTORRENT_BUILD_TESTS)
+if (DOTTORRENT_TESTS)
 add_subdirectory(tests)
 endif()
 

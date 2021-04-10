@@ -24,7 +24,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/expected-lite.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/gsl-lite.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/bencode.cmake)
 
-if (DOTTORRENT_BUILD_TESTS)
+if (DOTTORRENT_TESTS)
     include(${CMAKE_CURRENT_LIST_DIR}/Catch2.cmake)
 endif()
 
