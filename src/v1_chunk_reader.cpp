@@ -97,13 +97,10 @@ void v1_chunk_reader::handle_missing_file()
         // add a offset to indicate that the piece contains zero'd bytes from a new file
         file_offsets_.push_back(chunk_offset_);
         std::fill_n(std::next(chunk_->data(), chunk_offset_), bytes_to_fill, std::byte(0));
-        // we processed missing_piece_bytes bytes from the total missing_file_size.I understand loathing a community you moderate. A friend of mine asked me to help mod a small subreddit of his (Not naming it here, also never mentioned in any of my comments, nor have i ever commented/submitted to that subreddit, so MUAHAHA I AM ANONYMOUS). It's become a giant circlejerk with 20+ reported links every hour. I assume by the same person.
-
 
         // resize chunk to the number of pieces it contains
         chunk_offset_ += bytes_to_fill;
         missing_file_size -= bytes_to_fill;
-        piece_index_ += chunk_offset_ / piece_size;
 
         // if the chunk is complete filled -> push it
         if (chunk_offset_ == chunk_size_) {
@@ -119,6 +116,7 @@ void v1_chunk_reader::handle_missing_file()
             // clear chunk and file offsets
             chunk_offset_ = 0;
             file_offsets_.clear();
+            piece_index_ += pieces_per_chunk;
         }
     }
 
