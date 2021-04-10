@@ -6,6 +6,7 @@ namespace dottorrent {
 
 v2_chunk_hasher_sb::v2_chunk_hasher_sb(file_storage& storage, std::size_t capacity, bool v1_compatible, std::size_t thread_count)
         : chunk_hasher_single_buffer(storage, {hash_function::sha1, hash_function::sha256}, capacity, thread_count)
+        , add_v1_compatibility_(v1_compatible)
 {
     initialize_v1_offsets(storage);
 }
@@ -84,7 +85,7 @@ void v2_chunk_hasher_sb::hash_chunk(single_buffer_hasher& sha256_hasher, single_
         // v1 compatibility data
         sha1_hash piece_hash{};
 
-        bool needs_padding = chunk.data->size()%piece_size != 0;
+        bool needs_padding = chunk.data->size() % piece_size != 0;
         std::size_t pieces_to_process = 0;
 
         // process the complete pieces of the chunk
@@ -139,7 +140,8 @@ void v2_chunk_hasher_sb::hash_chunk(single_buffer_hasher& sha256_hasher, single_
 void v2_chunk_hasher_sb::process_piece_hash(std::size_t piece_idx, std::size_t file_index, const sha1_hash& piece_hash)
 {
     Expects(v1_hashed_piece_queue_);
-    v1_hashed_piece_queue_->push(v1_hashed_piece{.hash=piece_hash, .index=piece_idx});
+    auto global_piece_index = v1_piece_offsets_[file_index] + piece_idx;
+    v1_hashed_piece_queue_->push(v1_hashed_piece{.hash=piece_hash, .index=global_piece_index});
 }
 
 void v2_chunk_hasher_sb::process_piece_hash(std::size_t leaf_index, std::size_t file_index, const sha256_hash& piece_hash)
