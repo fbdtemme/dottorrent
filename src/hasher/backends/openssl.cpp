@@ -18,39 +18,33 @@ const ::EVP_MD* get_evp_message_digest(message_digest_algorithm algorithm)
 #ifndef OPENSSL_NO_MD2
     case message_digest_algorithm::md2: {
         return ::EVP_md2();
-#endif
-        return nullptr;
     }
-    case message_digest_algorithm::md4: {
+#endif
 #ifndef OPENSSL_NO_MD4
+    case message_digest_algorithm::md4: {
         return ::EVP_md4();
-#endif
-        return nullptr;
     }
+#endif
+#ifndef OPENSSL_NO_MD5
     case message_digest_algorithm::md5: {
-#ifndef OPENSSL_NO_MD5
         return ::EVP_md5();
-#endif
-        return nullptr;
     }
-    case message_digest_algorithm::md5_sha1: {
+#endif
 #ifndef OPENSSL_NO_MD5
+    case message_digest_algorithm::md5_sha1: {
         return ::EVP_md5_sha1();
-#endif
-        return nullptr;
     }
+#endif
+#ifndef OPENSSL_NO_BLAKE2
     case message_digest_algorithm::blake2b512: {
-#ifndef OPENSSL_NO_BLAKE2
         return ::EVP_blake2b512();
-#endif
-        return nullptr;
     }
-    case message_digest_algorithm::blake2s256: {
+#endif
 #ifndef OPENSSL_NO_BLAKE2
+    case message_digest_algorithm::blake2s256: {
         return ::EVP_blake2s256();
-#endif
-        return nullptr;
     }
+#endif
     case message_digest_algorithm::sha1:
         return ::EVP_sha1();
     case message_digest_algorithm::sha224:
@@ -77,30 +71,26 @@ const ::EVP_MD* get_evp_message_digest(message_digest_algorithm algorithm)
         return ::EVP_shake128();
     case message_digest_algorithm::shake256:
         return ::EVP_shake256();
-    case message_digest_algorithm::mdc2: {
 #ifndef OPENSSL_NO_MDC2
+    case message_digest_algorithm::mdc2: {
         return ::EVP_mdc2();
-#endif
-        return nullptr;
     }
-    case message_digest_algorithm::ripemd160: {
+#endif
 #ifndef OPENSSL_NO_RMD160
+    case message_digest_algorithm::ripemd160: {
         return ::EVP_ripemd160();
-#endif
-        return nullptr;
     }
-    case message_digest_algorithm::whirlpool: {
+#endif
 #ifndef OPENSSL_NO_WHIRLPOOL
+    case message_digest_algorithm::whirlpool: {
         return ::EVP_whirlpool();
-#endif
-        return nullptr;
     }
-    case message_digest_algorithm::sm3: {
+#endif
 # ifndef OPENSSL_NO_SM3
+    case message_digest_algorithm::sm3: {
         return ::EVP_sm3();
-#endif
-        return nullptr;
     }
+#endif
     default:
         return nullptr;
     }
