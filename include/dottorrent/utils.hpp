@@ -104,6 +104,10 @@ constexpr bool always_false_v = always_false<Args...>::value;
 //    return s;
 //}
 
+constexpr unsigned long long div_ceil(unsigned long long x, unsigned long long y) noexcept {
+    Expects(y != 0);
+    return x / y + (x % y != 0);
+}
 
 constexpr unsigned long long log2_floor(unsigned long long x) noexcept {
     return x ? 63 - std::countl_zero(x) : 0;

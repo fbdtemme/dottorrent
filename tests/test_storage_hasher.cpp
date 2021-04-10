@@ -42,7 +42,7 @@ TEST_CASE("test v1 hashing")
         CHECK_FALSE(hasher.done());
         hasher.wait();
         CHECK(hasher.done());
-        v1_single_buffer_test_dir_infohash =  info_hash_v1(m);
+        v1_single_buffer_test_dir_infohash = info_hash_v1(m);
     }
 
     SECTION("multi buffer") {
@@ -53,11 +53,7 @@ TEST_CASE("test v1 hashing")
         CHECK_FALSE(hasher.done());
         hasher.wait();
         CHECK(hasher.done());
-        v1_multi_buffer_test_dir_infohash =  info_hash_v1(m);
-    }
-
-    SECTION("compare single and multibuffer infohash") {
-        CHECK(v1_single_buffer_test_dir_infohash == v1_multi_buffer_test_dir_infohash);
+        v1_multi_buffer_test_dir_infohash = info_hash_v1(m);
     }
 }
 
@@ -85,6 +81,13 @@ TEST_CASE("test v2 hashing")
         CHECK_FALSE(hasher.done());
         hasher.wait();
         CHECK(hasher.done());
+
+        std::vector<bool> has_v2_data{};
+        for (const auto& e : storage) {
+            has_v2_data.push_back(e.has_v2_data());
+        }
+
+        CHECK(rng::all_of(has_v2_data, std::identity{}));
         v2_single_buffer_test_dir_infohash = info_hash_v2(m);
     }
 
@@ -99,11 +102,6 @@ TEST_CASE("test v2 hashing")
         CHECK(hasher.done());
         v2_multi_buffer_test_dir_infohash = info_hash_v2(m);
     }
-
-    SECTION("compare single and multibuffer infohash") {
-        CHECK(v1_single_buffer_test_dir_infohash == v1_multi_buffer_test_dir_infohash);
-    }
-
 }
 
 TEST_CASE("test hybrid hashing")

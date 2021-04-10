@@ -5,6 +5,7 @@
 #include "dottorrent/chunk_hasher_single_buffer.hpp"
 #include "dottorrent/hash.hpp"
 #include "dottorrent/data_chunk.hpp"
+#include "hashed_piece.hpp"
 
 namespace dottorrent {
 

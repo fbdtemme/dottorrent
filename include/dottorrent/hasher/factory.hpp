@@ -9,13 +9,15 @@
 
 #ifdef DOTTORRENT_USE_OPENSSL
 #include "dottorrent/hasher/openssl_hasher.hpp"
-
 #endif
 #ifdef DOTTORRENT_USE_GCRYPT
 #include "dottorrent/hasher/gcrypt_hasher.hpp"
 #endif
 #ifdef DOTTORRENT_USE_WINCNG
 #include "dottorrent/hasher/wincng_hasher.hpp"
+#endif
+#ifdef DOTTORRENT_USE_WOLFSSL
+#include "dottorrent/hasher/wolfssl_hasher.hpp"
 #endif
 
 #if defined(DOTTORRENT_USE_ISAL)
@@ -35,6 +37,8 @@ inline std::unique_ptr<single_buffer_hasher> make_hasher(hash_function f)
     return std::make_unique<gcrypt_hasher>(f);
 #elif defined(DOTTORRENT_USE_WINCNG)
     return std::make_unique<wincng_hasher>(f);
+#elif defined(DOTTORRENT_USE_WOLFSSL)
+    return std::make_unique<wolfssl_hasher>(f);
 #else
     #error "No cryptographic library specified"
 #endif
@@ -63,6 +67,8 @@ make_hash(std::span<const std::byte> data)
     auto hasher = std::make_unique<gcrypt_hasher>(F);
 #elif defined(DOTTORRENT_USE_WINCNG)
     auto hasher = std::make_unique<wincng_hasher>(F);
+#elif defined(DOTTORRENT_USE_WOLFSSL)
+    auto hasher = std::make_unique<wolfssl_hasher>(F);
 #else
     #error "No cryptographic library specified"
 #endif
@@ -82,6 +88,8 @@ hasher_supported_algorithms() noexcept
     return gcrypt_hasher::supported_algorithms();
 #elif defined(DOTTORRENT_USE_WINCNG)
     return wincng_hasher::supported_algorithms();
+#elif defined(DOTTORRENT_USE_WOLFSSL)
+    return wolfssl_hasher::supported_algorithms();
 #else
     #error "No cryptographic library specified!"
 #endif

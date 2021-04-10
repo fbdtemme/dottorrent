@@ -1,9 +1,16 @@
-//
-// Created by fbdtemme on 9/11/20.
-//
 #include <bit>
-#include "dottorrent/v1_chunk_verifier.hpp"
+
 #include "dottorrent/storage_verifier.hpp"
+
+#include "dottorrent/v1_chunk_reader.hpp"
+#include "dottorrent/v2_chunk_reader.hpp"
+
+#include "dottorrent/v1_chunk_hasher_sb.hpp"
+#include "dottorrent/v1_chunk_hasher_mb.hpp"
+#include "dottorrent/v2_chunk_hasher_sb.hpp"
+#include "dottorrent/v2_chunk_hasher_mb.hpp"
+#include "dottorrent/v1_piece_verifier.hpp"
+#include "dottorrent/v2_piece_verifier.hpp"
 
 
 namespace dottorrent {
@@ -11,16 +18,38 @@ namespace dottorrent {
 storage_verifier::storage_verifier(file_storage& storage, const storage_verifier_options& options)
         : storage_(storage)
         , protocol_(options.protocol_version)
-        , checksums_(options.checksums)
-        , memory_({.min_chunk_size=options.min_chunk_size, .max_memory=options.max_memory})
         , threads_(options.threads)
+        , io_block_size_()
+        , queue_capacity_()
+        , enable_multi_buffer_hashing_(options.enable_multi_buffer_hashing)
 {
-    if (storage.piece_size() == 0)
-        storage.set_piece_size(choose_piece_size(storage));
+    file_storage& st = storage_;
+
+    // auto determine protocol version if not set
+    if (protocol_ == protocol::none) {
+        protocol_ = st.protocol();
+    }
+    auto piece_size = storage.piece_size();
+
+#ifdef DOTTORRENT_USE_ISAL
+    if (options.min_io_block_size) {
+        io_block_size_ = std::max(piece_size, *options.min_io_block_size);
+    } else {
+        io_block_size_ = 16 * piece_size;
+    }
+#else
+    io_block_size_ = std::max(piece_size, options.min_io_block_size ? *options.min_io_block_size : 1_MiB);
+#endif
+
+    if (options.max_memory) {
+        queue_capacity_ = std::max(std::size_t(4), *options.max_memory / io_block_size_);
+    }
+    else {
+        queue_capacity_ = std::max(std::size_t(4), 4 * threads_);
+    }
 
     Expects(protocol_ != dottorrent::protocol::none);
     Expects(std::has_single_bit(storage.piece_size()));    // is a power of 2
-    Expects(storage.has_root_directory());
 
     if (protocol_ == protocol::v1) {
         cumulative_file_size_ = inclusive_file_size_scan_v1(storage);
@@ -51,27 +80,51 @@ void storage_verifier::start() {
         throw std::runtime_error("cannot start finished or cancelled hasher");
 
     auto& storage = storage_.get();
-    auto chunk_size = std::max(memory_.min_chunk_size, storage.piece_size());
 
     if (protocol_ == protocol::v1) {
-        reader_ = std::make_unique<v1_chunk_reader>(storage_, chunk_size, memory_.max_memory);
+        reader_ = std::make_unique<v1_chunk_reader>(storage_, io_block_size_, queue_capacity_);
     }
     else {
-        reader_ = std::make_unique<v2_chunk_reader>(storage_, chunk_size, memory_.max_memory);
+        reader_ = std::make_unique<v2_chunk_reader>(storage_, io_block_size_, queue_capacity_);
     }
-
-    // add piece hashers and register them with the reader
 
     if (protocol_ == protocol::v1) {
-        verifier_ = std::make_unique<v1_chunk_verifier>(storage_, threads_);
+#ifdef DOTTORRENT_USE_ISAL
+        if (enable_multi_buffer_hashing_)
+            hasher_ = std::make_unique<v1_chunk_hasher_mb>(storage_, queue_capacity_, threads_);
+        else
+            hasher_ = std::make_unique<v1_chunk_hasher_sb>(storage_, queue_capacity_, threads_);
+#else
+        hasher_ = std::make_unique<v1_chunk_hasher_sb>(storage_, queue_capacity_, threads_);
+#endif
+        reader_->register_hash_queue(hasher_->get_queue());
+
+        verifier_ = std::make_unique<v1_piece_verifier>(storage_, -1, 1);
+        hasher_->register_v1_hashed_piece_queue(verifier_->get_v1_queue());
     }
     else {
-        verifier_ = std::make_unique<v2_chunk_verifier>(storage_, threads_);
+
+#ifdef DOTTORRENT_USE_ISAL
+        if (enable_multi_buffer_hashing_)
+            hasher_ = std::make_unique<v2_chunk_hasher_mb>(
+                    storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+        else
+            hasher_ = std::make_unique<v2_chunk_hasher_sb>(
+                    storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+#else
+        hasher_ = std::make_unique<v2_chunk_hasher_sb>(
+                storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+#endif
+        reader_->register_hash_queue(hasher_->get_queue());
+
+        verifier_ = std::make_unique<v2_piece_verifier>(storage_, -1, 1);
+        hasher_->register_v1_hashed_piece_queue(verifier_->get_v1_queue());
+        hasher_->register_v2_hashed_piece_queue(verifier_->get_v2_queue());
     }
-    reader_->register_hash_queue(verifier_->get_queue());
 
     // start all parts
     verifier_->start();
+    hasher_->start();
     reader_->start();
     started_ = true;
 }
@@ -88,10 +141,12 @@ void storage_verifier::cancel() {
 
     // cancel all tasks
     reader_->request_cancellation();
+    hasher_->request_cancellation();
     verifier_->request_cancellation();
 
     // wait for all tasks to complete
     reader_->wait();
+    hasher_->wait();
     verifier_->wait();
 
     cancelled_ = true;
@@ -105,10 +160,16 @@ void storage_verifier::wait()
     if (done())
         throw std::runtime_error("hasher already done");
 
+    Expects(hasher_->running());
     reader_->wait();
+    Expects(hasher_->running());
+
     // no pieces will be added after the reader finishes.
     // So we can signal hashers that they can shutdown after
     // finishing all remaining work
+    hasher_->request_stop();
+    hasher_->wait();
+
     verifier_->request_stop();
     verifier_->wait();
 
@@ -142,12 +203,12 @@ std::size_t storage_verifier::bytes_read() const noexcept
 
 std::size_t storage_verifier::bytes_hashed() const noexcept
 {
-    return verifier_->bytes_hashed();
+    return hasher_->bytes_hashed();
 }
 
 std::size_t storage_verifier::bytes_done() const noexcept
 {
-    return verifier_->bytes_done();
+    return hasher_->bytes_done();
 }
 
 
@@ -191,6 +252,5 @@ double storage_verifier::percentage(const file_entry& entry) const
 
     return verifier_->percentage(file_index);
 }
-
 
 } //namespace dottorrent

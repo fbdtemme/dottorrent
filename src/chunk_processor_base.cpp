@@ -6,7 +6,7 @@ chunk_processor_base::chunk_processor_base(file_storage& storage, std::vector<ha
         std::size_t thread_count)
         : storage_(storage)
         , threads_(thread_count)
-        , queue_(std::make_shared<queue_type>(capacity))
+        , queue_(std::make_shared<work_queue_type>(capacity))
         , hash_functions_(std::move(hf))
         , done_(thread_count)
 {
@@ -18,7 +18,7 @@ void chunk_processor_base::start() {
     Ensures(!cancelled());
 
     for (std::size_t i = 0; i < threads_.size(); ++i) {
-        threads_[i] = std::jthread(&chunk_processor_base::run, this, i);
+        threads_[i] = std::jthread([=, this](std::stop_token st) { run(std::move(st), i); });
         done_[i] = false;
     }
     started_.store(true, std::memory_order_release);
@@ -79,10 +79,10 @@ auto chunk_processor_base::done() const noexcept -> bool {
     return cancelled() || (started() && all_done);
 }
 
-std::shared_ptr<typename chunk_processor_base::queue_type> chunk_processor_base::get_queue()
+std::shared_ptr<typename chunk_processor_base::work_queue_type> chunk_processor_base::get_queue()
 { return queue_; }
 
-std::shared_ptr<const typename chunk_processor_base::queue_type> chunk_processor_base::get_queue() const
+std::shared_ptr<const typename chunk_processor_base::work_queue_type> chunk_processor_base::get_queue() const
 { return queue_; }
 
 auto chunk_processor_base::bytes_hashed() const noexcept -> std::size_t
@@ -90,5 +90,11 @@ auto chunk_processor_base::bytes_hashed() const noexcept -> std::size_t
 
 auto chunk_processor_base::bytes_done() const noexcept -> std::size_t
 { return bytes_done_.load(std::memory_order_relaxed); }
+
+void chunk_processor_base::register_v1_hashed_piece_queue(const std::shared_ptr<v1_hashed_piece_queue>& queue)
+{ v1_hashed_piece_queue_ = queue; }
+
+void chunk_processor_base::register_v2_hashed_piece_queue(const std::shared_ptr<v2_hashed_piece_queue>& queue)
+{ v2_hashed_piece_queue_ = queue; }
 
 }

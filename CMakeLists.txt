@@ -1,29 +1,24 @@
 cmake_minimum_required(VERSION 3.15)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
-
 project(dottorrent
         DESCRIPTION "A C++20 torrent metafile library"
-        VERSION 0.1.0
-        LANGUAGES CXX
-        )
+        VERSION 0.4.0
+        LANGUAGES CXX)
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
 
 include(CTest)
 include(SanitizersConfig)
 include(GNUInstallDirs)
 
-option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
-option(DOTTORRENT_BUILD_COVERAGE   "Enable coverage flags" OFF)
+option(DOTTORRENT_TESTS      "Build tests" ON)
+option(DOTTORRENT_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
-                          "The cryptographic library to link agains. Options are: openssl, libgcrypt, wincng")
+    "The cryptographic library to link against. Options are: openssl, wincng, wolfssl")
+set(DOTTORRENT_MB_CRYPTO_LIB "openssl" CACHE STRING
+        "The multibuffer cryptographic library to link against. Options are: none, isal")
 
-option(DOTTORRENT_CRYPTO_MULTIBUFFER "Enable multibuffer hashing with Intel ISA-L" OFF)
 option(DOTTORRENT_INSTALL            "Generate an install target" ON)
-
-# Disable Intel ISA-L on arm systems
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL ARM)
-    set(DOTTORRENT_CRYPTO_MULTIBUFFER CACHE BOOL "Enable multibuffer hashing with Intel ISA-L" OFF FORCE)
-endif()
 
 # add cmake directory for Find* modules
 cmake_policy(SET CMP0076 NEW)
@@ -37,8 +32,10 @@ add_library(dottorrent
         src/file_entry.cpp
         src/file_storage.cpp
         src/hasher/backends/gcrypt.cpp
+        src/hasher/backends/isal.cpp
         src/hasher/backends/openssl.cpp
         src/hasher/backends/wincng.cpp
+        src/hasher/backends/wolfssl.cpp
         src/magnet_uri.cpp
         src/metafile.cpp
         src/metafile_parsing.cpp
@@ -50,13 +47,16 @@ add_library(dottorrent
         src/v1_chunk_hasher_mb.cpp
         src/v1_chunk_hasher_sb.cpp
         src/v1_chunk_reader.cpp
-        src/v1_chunk_verifier.cpp
+        src/v1_piece_verifier.cpp
+        src/v1_piece_writer.cpp
         src/v2_checksum_hasher.cpp
         src/v2_chunk_hasher_mb.cpp
         src/v2_chunk_hasher_mixin.cpp
         src/v2_chunk_hasher_sb.cpp
+        src/v2_chunk_hasher_sb.cpp
         src/v2_chunk_reader.cpp
-        src/v2_chunk_verifier.cpp
+        src/v2_piece_verifier.cpp
+        src/v2_piece_writer.cpp
 )
 
 
@@ -71,24 +71,34 @@ if (WIN32)
 endif()
 
 string(TOLOWER ${DOTTORRENT_CRYPTO_LIB} DOTTORRENT_CRYPTO_LIB)
+string(TOLOWER ${DOTTORRENT_MB_CRYPTO_LIB} DOTTORRENT_MB_CRYPTO_LIB)
 
 if (DOTTORRENT_CRYPTO_LIB STREQUAL "openssl")
     find_package(OpenSSL REQUIRED)
     target_link_libraries(${PROJECT_NAME}      PUBLIC OpenSSL::Crypto)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_OPENSSL)
     message(STATUS "Using cryptographic library: OpenSSL")
+
 elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wincng")
     target_link_libraries(${PROJECT_NAME}   PUBLIC bcrypt)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WINCNG)
     message(STATUS "Using cryptographic library: WinCNG")
+
+elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wolfssl")
+    include(${CMAKE_CURRENT_LIST_DIR}/external/wolfSSL.cmake)
+    target_link_libraries(${PROJECT_NAME} PUBLIC wolfssl)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WOLFSSL)
+    message(STATUS "Using cryptographic library: wolfSSL")
+else()
+    message(FATAL_ERROR "Unrecognised crypto library: ${DOTTORRENT_CRYPTO_LIB}")
 endif()
 
-
-if (DOTTORRENT_CRYPTO_MULTIBUFFER)
+if (DOTTORRENT_MB_CRYPTO_LIB STREQUAL "isal")
+    include(${CMAKE_CURRENT_LIST_DIR}/external/isa-l_crypto.cmake)
     target_link_libraries(${PROJECT_NAME}        PUBLIC ISAL::Crypto)
     get_property(dirs TARGET ${PROJECT_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
     target_compile_definitions(${PROJECT_NAME}   PUBLIC DOTTORRENT_USE_ISAL)
-    message(STATUS "Using multibuffer hashing with Intel ISA-L")
+    message(STATUS "Using multibuffer cryptographic library: Intel ISA-L")
 endif()
 
 find_package(Threads REQUIRED)
@@ -99,7 +109,6 @@ target_include_directories(dottorrent PUBLIC
         )
 
 set(dottorrent_public_include_dir  ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME})
-
 
 target_link_libraries(dottorrent
     PUBLIC
@@ -115,7 +124,7 @@ if (DOTTORRENT_BUILD_COVERAGE)
     set(CMAKE_C_FLAGS --coverage)
 endif()
 
-if (DOTTORRENT_BUILD_TESTS)
+if (DOTTORRENT_TESTS)
 add_subdirectory(tests)
 endif()
 

@@ -2,7 +2,9 @@
 
 namespace dottorrent {
 
-void chunk_hasher_single_buffer::run(int thread_idx) {
+void chunk_hasher_single_buffer::run(std::stop_token stop_token, int thread_idx) {
+    Expects(stop_token.stop_possible());
+
     // copy the global hasher object to a per-thread hasher
     std::vector<std::unique_ptr<single_buffer_hasher>> hashers {};
     for (const auto f : hash_functions_) {
@@ -10,7 +12,6 @@ void chunk_hasher_single_buffer::run(int thread_idx) {
     }
 
     data_chunk item {};
-    auto stop_token = threads_[thread_idx].get_stop_token();
 
     // Process tasks until stopped is set
     while (!stop_token.stop_requested() && stop_token.stop_possible()) {

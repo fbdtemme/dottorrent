@@ -18,24 +18,18 @@
 
 #include <gsl-lite/gsl-lite.hpp>
 
-#include <dottorrent/object_pool.hpp>
-
 #include "dottorrent/literals.hpp"
 #include "dottorrent/file_entry.hpp"
 #include "dottorrent/file_storage.hpp"
 #include "dottorrent/file_progress_data.hpp"
 
 #include "dottorrent/data_chunk.hpp"
-#include "dottorrent/v1_chunk_reader.hpp"
-#include "dottorrent/v2_chunk_reader.hpp"
-#include "dottorrent/v1_chunk_verifier.hpp"
-#include "dottorrent/v2_chunk_verifier.hpp"
-
 #include "dottorrent/hash.hpp"
 #include "dottorrent/checksum.hpp"
-#include "dottorrent/v1_checksum_hasher.hpp"
-
-
+#include "dottorrent/chunk_reader.hpp"
+#include "dottorrent/chunk_hasher_single_buffer.hpp"
+#include "dottorrent/hashed_piece_processor.hpp"
+#include "hashed_piece_verifier.hpp"
 
 namespace dottorrent {
 
@@ -47,16 +41,17 @@ using namespace std::chrono_literals;
 /// Options to control the memory usage of a storage_verifier.
 struct storage_verifier_options
 {
-    /// The bittorrent procol version to create a metafile for.
-    protocol protocol_version = protocol::v1;
-    /// The per file checksums to include in the file list.
-    std::unordered_set<hash_function> checksums = {};
+    /// The bittorrent procol version to verify.
+    /// When none the storage verifier the highest protocol available in the metafile.
+    protocol protocol_version = protocol::none;
     /// The minimum size of a block to read from disk.
     /// For piece sizes smaller than the min_chunk_size multiple pieces
     /// will be read in a single block for faster disk I/O.
-    std::size_t min_chunk_size = 2_MiB;
-    /// Max size of all file chunks in memory
-    std::size_t max_memory = 128_MiB;
+    std::optional<std::size_t> min_io_block_size = std::nullopt;
+    /// Max size of all file chunks in memory. The default capacity is determined by
+    std::optional<std::size_t> max_memory = std::nullopt;
+    /// Weither to enable multi-buffer hashing if linked against Intel ISA-L.
+    bool enable_multi_buffer_hashing = true;
 
     /// Number of threads to hash pieces.
     /// Total number of threads will be equal to:
@@ -69,13 +64,6 @@ struct storage_verifier_options
 class storage_verifier
 {
 public:
-    /// Options to control the memory usage of a storage_verifier.
-    struct memory_options
-    {
-        std::size_t min_chunk_size;
-        std::size_t max_memory;
-    };
-
     explicit storage_verifier(
             file_storage& storage,
             const storage_verifier_options& options = {});
@@ -125,13 +113,15 @@ public:
 private:
     std::reference_wrapper<file_storage> storage_;
     enum protocol protocol_;
-    std::unordered_set<hash_function> checksums_;
-    memory_options memory_;
+
     std::size_t threads_;
+    std::size_t io_block_size_;
+    std::size_t queue_capacity_;
+    bool enable_multi_buffer_hashing_;
 
     std::unique_ptr<chunk_reader> reader_;
-    std::unique_ptr<chunk_verifier> verifier_;
-    std::vector<std::unique_ptr<v1_checksum_hasher>> checksum_hashers_;
+    std::unique_ptr<chunk_processor> hasher_;
+    std::unique_ptr<hashed_piece_verifier> verifier_;
 
     bool started_ = false;
     bool stopped_ = false;

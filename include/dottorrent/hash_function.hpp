@@ -11,6 +11,7 @@ using namespace std::string_view_literals;
 
 enum class hash_function {
     none,
+    md2,
     md4,
     md5,
     blake2b_512,

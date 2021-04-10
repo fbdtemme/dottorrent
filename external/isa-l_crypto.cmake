@@ -24,6 +24,7 @@ if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/isa-l_crypto)
     ExternalProject_Add(build-isa-l_crypto
             SOURCE_DIR          ${isal_source_dir}
             BUILD_IN_SOURCE     ON
+            UPDATE_DISCONNECTED ON
             CONFIGURE_COMMAND   "./autogen.sh"
             COMMAND             ./configure --prefix=${isal_crypto_install_dir} --libdir=${isal_crypto_install_libdir}
             BUILD_COMMAND       ${MAKE_EXECUTABLE} .
@@ -43,6 +44,7 @@ else()
             GIT_TAG             "master"
             SOURCE_DIR          ${isal_source_dir}
             BUILD_IN_SOURCE     ON
+            UPDATE_DISCONNECTED ON
             CONFIGURE_COMMAND   "./autogen.sh"
             COMMAND             ./configure --prefix=${isal_crypto_install_dir} --libdir=${isal_crypto_install_libdir}
             BUILD_COMMAND       ${MAKE_EXECUTABLE} .
