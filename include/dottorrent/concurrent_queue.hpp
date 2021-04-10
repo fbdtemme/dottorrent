@@ -12,6 +12,14 @@
 #include <queue>
 #include <deque>
 
+#include <atomic>
+#include <cassert>
+#include <cstddef> // offsetof
+#include <limits>
+#include <memory>
+#include <new> // std::hardware_destructive_interference_size
+#include <stdexcept>
+
 namespace dottorrent {
 
 template<typename T, typename Allocator = std::allocator<T>>
@@ -75,12 +83,25 @@ public:
         not_full_.notify_all();
         return true;
     }
+
+    std::size_t size() const noexcept
+    {
+        std::unique_lock<std::mutex> lk(mutex_);
+        return queue_.size();
+    }
+
+    void set_capacity(std::size_t n) noexcept
+    {
+        std::unique_lock<std::mutex> lk(mutex_);
+        capacity_ = n;
+    }
+
 private:
-    std::mutex mutex_;
-    std::condition_variable not_empty_;
-    std::condition_variable not_full_;
+    mutable std::mutex mutex_ {};
+    std::condition_variable not_empty_ {};
+    std::condition_variable not_full_ {};
     size_t capacity_;
-    std::queue<T, std::deque<T, Allocator>> queue_;
+    std::queue<T, std::deque<T, Allocator>> queue_ {};
 };
 
 

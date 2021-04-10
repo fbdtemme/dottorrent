@@ -20,7 +20,7 @@ void v1_chunk_reader::run()
         const file_entry& file_entry = storage.at(file_index_);
 
         // handle pieces if the file does not exists. Used when verifying torrents.
-        if (!fs::exists(file_path) || file_entry.is_padding_file()) {
+        if (!fs::exists(file_path) || file_entry.is_padding_file()) [[unlikely]] {
             handle_missing_file();
             ++file_index_;
             continue;
@@ -41,7 +41,7 @@ void v1_chunk_reader::run()
             chunk_offset_ += f_.gcount();
             bytes_read_.fetch_add(f_.gcount(), std::memory_order_relaxed);
 
-            if (chunk_offset_ == chunk_size_) {
+            if (chunk_offset_ == chunk_size_) [[likely]] {
                 // push chunk to consumers
                 push({static_cast<std::uint32_t>(piece_index_),
                       static_cast<std::uint32_t>(file_index_-file_offsets_.size()),
@@ -58,8 +58,8 @@ void v1_chunk_reader::run()
                 piece_index_ += pieces_per_chunk;
             }
             // eof reached
-            if (f_.eof()) break;
-            if (f_.fail()) {
+            if (f_.eof())  [[unlikely]] break;
+            if (f_.fail()) [[unlikely]] {
                 throw std::runtime_error(fmt::format("I/O error reading: {}", file_entry.path()));
             }
         }
@@ -67,7 +67,7 @@ void v1_chunk_reader::run()
         f_.clear();
     }
     // push last possibly partial chunk
-    if (chunk_offset_ != 0) {
+    if (chunk_offset_ != 0) [[likely]] {
         chunk_->resize(chunk_offset_);
         std::size_t pieces_in_chunk = (chunk_offset_ + piece_size -1) / piece_size;
         push({static_cast<std::uint32_t>(piece_index_),

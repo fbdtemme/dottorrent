@@ -4,7 +4,6 @@
 #include <system_error>
 #include <span>
 
-
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -19,16 +18,9 @@ class openssl_crypto_category : public std::error_category
 public:
     openssl_crypto_category() = default;
 
-    const char* name() const noexcept override
-    {
-        return "openssl-crypto";
-    }
+    const char* name() const noexcept override;
 
-    std::string message(int value) const override
-    {
-        const char* s = ::ERR_reason_error_string(value);
-        return s ? s : "openssl-crypto error";
-    }
+    std::string message(int value) const override;
 };
 
 }
@@ -313,99 +305,7 @@ enum class message_digest_algorithm
 
 namespace detail {
 
-inline const ::EVP_MD* get_evp_message_digest(message_digest_algorithm algorithm)
-{
-    switch (algorithm) {
-    case message_digest_algorithm::md2: {
-#ifndef OPENSSL_NO_MD2
-        return ::EVP_md2();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::md4: {
-#ifndef OPENSSL_NO_MD4
-        return ::EVP_md4();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::md5: {
-#ifndef OPENSSL_NO_MD5
-        return ::EVP_md5();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::md5_sha1: {
-#ifndef OPENSSL_NO_MD5
-        return ::EVP_md5_sha1();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::blake2b512: {
-#ifndef OPENSSL_NO_BLAKE2
-        return ::EVP_blake2b512();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::blake2s256: {
-#ifndef OPENSSL_NO_BLAKE2
-        return ::EVP_blake2s256();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::sha1:
-        return ::EVP_sha1();
-    case message_digest_algorithm::sha224:
-        return ::EVP_sha224();
-    case message_digest_algorithm::sha256:
-        return ::EVP_sha256();
-    case message_digest_algorithm::sha384:
-        return ::EVP_sha384();
-    case message_digest_algorithm::sha512:
-        return ::EVP_sha512();
-    case message_digest_algorithm::sha512_224:
-        return ::EVP_sha512_224();
-    case message_digest_algorithm::sha512_256:
-        return ::EVP_sha512_256();
-    case message_digest_algorithm::sha3_224:
-        return ::EVP_sha3_224();
-    case message_digest_algorithm::sha3_256:
-        return ::EVP_sha3_256();
-    case message_digest_algorithm::sha3_384:
-        return ::EVP_sha3_384();
-    case message_digest_algorithm::sha3_512:
-        return ::EVP_sha3_512();
-    case message_digest_algorithm::shake128:
-        return ::EVP_shake128();
-    case message_digest_algorithm::shake256:
-        return ::EVP_shake256();
-    case message_digest_algorithm::mdc2: {
-#ifndef OPENSSL_NO_MDC2
-        return ::EVP_mdc2();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::ripemd160: {
-#ifndef OPENSSL_NO_RMD160
-        return ::EVP_ripemd160();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::whirlpool: {
-#ifndef OPENSSL_NO_WHIRLPOOL
-        return ::EVP_whirlpool();
-#endif
-        return nullptr;
-    }
-    case message_digest_algorithm::sm3: {
-# ifndef OPENSSL_NO_SM3
-        return ::EVP_sm3();
-#endif
-        return nullptr;
-    }
-    default:
-        return nullptr;
-    }
-}
+const ::EVP_MD* get_evp_message_digest(message_digest_algorithm algorithm);
 
 } // namespace detail
 
@@ -414,47 +314,15 @@ inline const ::EVP_MD* get_evp_message_digest(message_digest_algorithm algorithm
 class message_digest
 {
 public:
-    explicit message_digest(message_digest_algorithm algorithm, ::ENGINE* engine = nullptr)
-        : context_()
-        , algorithm_context_(detail::get_evp_message_digest(algorithm))
-        , engine_(engine)
-    {
-        context_ = ::EVP_MD_CTX_new();
-        if (context_ == nullptr) {
-            throw std::system_error((int)ERR_get_error(), openssl_crypto_category());
-        }
-        ::EVP_MD_CTX_init(context_);
+    explicit message_digest(message_digest_algorithm algorithm, ::ENGINE* engine = nullptr);
 
-        if (algorithm_context_ == nullptr) {
-            throw std::system_error(make_error_code(evp_errc::unsupported_algorithm));
-        }
-        if (::EVP_DigestInit_ex(context_, algorithm_context_, engine_) != 1) {
-            throw std::system_error((int)ERR_get_error(), openssl_crypto_category());
-        }
-    }
+    void update(std::span<const std::byte> data);
 
-    void update(std::span<const std::byte> data)
-    {
-        ::EVP_DigestUpdate(context_, reinterpret_cast<const void*>(data.data()), data.size());
-    }
+    void finalize_to(std::span<std::byte> digest);
 
-    void finalize_to(std::span<std::byte> digest)
-    {
-        auto digest_size = static_cast<unsigned int>(digest.size());
-        ::EVP_DigestFinal_ex(context_, reinterpret_cast<unsigned char*>(digest.data()), &digest_size);
-    }
+    void reset();
 
-    void reset()
-    {
-        if (::EVP_DigestInit_ex(context_, algorithm_context_, engine_) != 1) {
-            throw std::system_error((int)ERR_get_error(), openssl_crypto_category());
-        }
-    }
-
-    ~message_digest()
-    {
-        ::EVP_MD_CTX_free(context_);
-    };
+    ~message_digest();
 
 private:
     ::EVP_MD_CTX* context_;

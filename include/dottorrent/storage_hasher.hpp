@@ -28,7 +28,7 @@
 #include "dottorrent/checksum.hpp"
 #include "dottorrent/chunk_reader.hpp"
 #include "dottorrent/chunk_hasher_single_buffer.hpp"
-
+#include "dottorrent/hashed_piece_processor.hpp"
 
 
 namespace dottorrent {
@@ -117,6 +117,7 @@ private:
     std::unique_ptr<chunk_reader> reader_;
     std::unique_ptr<chunk_processor> hasher_;
     std::vector<std::unique_ptr<chunk_processor>> checksum_hashers_;
+    std::unique_ptr<hashed_piece_processor> verifier_;
 
     bool started_ = false;
     bool stopped_ = false;

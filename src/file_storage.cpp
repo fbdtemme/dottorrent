@@ -214,7 +214,6 @@ void file_storage::set_piece_hash(std::size_t index, const sha1_hash& hash)
 {
     Expects(index < pieces_.size());
     Expects(pieces_.size() == piece_count());
-    std::unique_lock lck{pieces_mutex_};
     pieces_[index] = hash;
 }
 

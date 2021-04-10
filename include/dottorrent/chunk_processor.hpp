@@ -10,16 +10,20 @@
 #include "dottorrent/hash.hpp"
 #include "dottorrent/file_storage.hpp"
 #include "dottorrent/data_chunk.hpp"
+#include "dottorrent/hashed_piece.hpp"
 
 namespace dottorrent {
 
 namespace rng = std::ranges;
+
 
 class chunk_processor
 {
 public:
     using chunk_type = data_chunk;
     using queue_type = concurrent_queue<chunk_type>;
+    using v1_hashed_piece_queue = concurrent_queue<std::optional<v1_hashed_piece>>;
+    using v2_hashed_piece_queue = concurrent_queue<std::optional<v2_hashed_piece>>;
 
     /// Start the worker threads
     virtual void start() = 0;
@@ -54,6 +58,10 @@ public:
 
     /// Number of bytes processed.
     virtual std::size_t bytes_done() const noexcept = 0;
+
+    virtual void register_v1_hashed_piece_queue(const std::shared_ptr<v1_hashed_piece_queue>& queue) {};
+
+    virtual void register_v2_hashed_piece_queue(const std::shared_ptr<v2_hashed_piece_queue>& queue) {};
 
     virtual ~chunk_processor() = default;
 };

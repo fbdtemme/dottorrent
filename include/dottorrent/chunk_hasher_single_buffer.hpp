@@ -10,7 +10,7 @@ public:
     using chunk_processor_base::chunk_processor_base;
 
 protected:
-    void run(int thread_idx) override;
+    void run(std::stop_token stop_token, int thread_idx) override;
 
     virtual void hash_chunk(std::vector<std::unique_ptr<single_buffer_hasher>>& hashers, const data_chunk& chunk) = 0;
 };

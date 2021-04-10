@@ -3,6 +3,8 @@
 #include <cstddef>
 #include <unordered_set>
 
+#include "dottorrent/hash_function.hpp"
+
 namespace dottorrent {
 
 class single_buffer_hasher

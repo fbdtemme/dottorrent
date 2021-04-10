@@ -5,9 +5,12 @@
 
 namespace dottorrent {
 
+
 class chunk_processor_base : public chunk_processor
 {
-    using queue_type = typename chunk_processor::queue_type;
+    using work_queue_type = typename chunk_processor::queue_type;
+    using v1_hashed_piece_queue = typename chunk_processor::v1_hashed_piece_queue;
+    using v2_hashed_piece_queue = typename chunk_processor::v2_hashed_piece_queue;
 
 public:
     explicit chunk_processor_base(file_storage& storage,
@@ -45,9 +48,13 @@ public:
     /// Check if the hasher has completed all work or is cancelled.
     auto done() const noexcept -> bool;
 
-    std::shared_ptr<queue_type> get_queue() override;
+    std::shared_ptr<work_queue_type> get_queue() override;
 
-    std::shared_ptr<const queue_type> get_queue() const override;
+    std::shared_ptr<const work_queue_type> get_queue() const override;
+
+    void register_v1_hashed_piece_queue(const std::shared_ptr<v1_hashed_piece_queue>& queue) override;
+
+    void register_v2_hashed_piece_queue(const std::shared_ptr<v2_hashed_piece_queue>& queue) override;
 
     /// Number of total bytes hashes.
     auto bytes_hashed() const noexcept -> std::size_t;
@@ -58,11 +65,14 @@ public:
     ~chunk_processor_base() override = default;
 
 protected:
-    virtual void run(int thread_idx) = 0;
+    virtual void run(std::stop_token stop_token, int thread_idx) = 0;
 
     std::reference_wrapper<file_storage> storage_;
     std::vector<std::jthread> threads_;
-    std::shared_ptr<queue_type> queue_;
+    std::shared_ptr<work_queue_type> queue_;
+    std::shared_ptr<v1_hashed_piece_queue> v1_hashed_piece_queue_;
+    std::shared_ptr<v2_hashed_piece_queue> v2_hashed_piece_queue_;
+
     std::vector<hash_function> hash_functions_;
 
     std::atomic<bool> started_ = false;

@@ -29,6 +29,10 @@ target_link_libraries(dottorrent-tests
         dottorrent
 )
 
+if (DOTTORRENT_CRYPTO_LIB STREQUAL wolfssl)
+    target_link_libraries(dottorrent-tests wolfssl)
+endif()
+
 target_include_directories(dottorrent-tests PRIVATE ../src)
 target_compile_definitions(dottorrent-tests PRIVATE
         TEST_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")

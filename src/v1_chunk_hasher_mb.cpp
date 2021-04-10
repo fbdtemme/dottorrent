@@ -53,8 +53,8 @@ void v1_chunk_hasher_mb::process_piece_hash(
         std::size_t file_idx,
         const sha1_hash& piece_hash)
 {
-    file_storage& storage = storage_;
-    storage.set_piece_hash(piece_idx, piece_hash);
+    Expects(v1_hashed_piece_queue_);
+    v1_hashed_piece_queue_->push(v1_hashed_piece{.hash=piece_hash, .index=piece_idx});
 }
 
 } // namespace dottorrent

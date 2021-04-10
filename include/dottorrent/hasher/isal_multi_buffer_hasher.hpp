@@ -9,12 +9,6 @@
 
 namespace dottorrent {
 
-static const auto supported_hash_functions_isal = std::unordered_set {
-        hash_function::sha1,
-        hash_function::sha256,
-};
-
-
 class isal_multi_buffer_hasher : public multi_buffer_hasher
 {
 public:
@@ -96,7 +90,7 @@ public:
 
     static const std::unordered_set<hash_function>& supported_algorithms() noexcept
     {
-        return supported_hash_functions_isal;
+        return isal::supported_hash_functions;
     }
 
 private:

@@ -24,10 +24,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/expected-lite.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/gsl-lite.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/bencode.cmake)
 
-if (DOTTORRENT_CRYPTO_MULTIBUFFER)
-    include(${CMAKE_CURRENT_LIST_DIR}/isa-l_crypto.cmake)
-endif()
-
 if (DOTTORRENT_BUILD_TESTS)
     include(${CMAKE_CURRENT_LIST_DIR}/Catch2.cmake)
 endif()
