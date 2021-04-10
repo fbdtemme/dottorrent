@@ -55,6 +55,7 @@ double v1_piece_verifier::percentage(std::size_t file_index) const noexcept {
 
 void v1_piece_verifier::verify_finished_piece(const v1_hashed_piece& piece) {
     file_storage& storage = storage_;
+    Expects(piece.index < storage.piece_count());
     const auto& real_hash = storage.get_piece_hash(piece.index);
     piece_map_[piece.index] = (real_hash == piece.hash);
 }

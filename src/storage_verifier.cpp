@@ -110,10 +110,10 @@ void storage_verifier::start() {
                     storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
         else
             hasher_ = std::make_unique<v2_chunk_hasher_sb>(
-                    storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+                    storage_, queue_capacity_, false, threads_);
 #else
         hasher_ = std::make_unique<v2_chunk_hasher_sb>(
-                storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);
+                storage_, queue_capacity_, false, threads_);
 #endif
         reader_->register_hash_queue(hasher_->get_queue());
 
