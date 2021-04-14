@@ -18,8 +18,8 @@ void chunk_processor_base::start() {
     Ensures(!cancelled());
 
     for (std::size_t i = 0; i < threads_.size(); ++i) {
-        threads_[i] = std::jthread([=, this](std::stop_token st) { run(std::move(st), i); });
         done_[i] = false;
+        threads_[i] = std::jthread([=, this](std::stop_token st) { run(std::move(st), i); });
     }
     started_.store(true, std::memory_order_release);
 }
@@ -45,7 +45,7 @@ void chunk_processor_base::wait() {
     }
 
     for  (auto i = 0; !done() && i < threads_.size(); ++i) {
-        queue_->try_push({
+        queue_->push({
                 std::numeric_limits<std::uint32_t>::max(),
                 std::numeric_limits<std::uint32_t>::max(),
                 nullptr
@@ -55,10 +55,10 @@ void chunk_processor_base::wait() {
 
     // should all be finished by now and ready to join
     for (auto& t : threads_) {
-        if (t.joinable()) {
-            t.join();
-        }
+        t.join();
     }
+    Ensures(std::all_of(done_.begin(), done_.end(),
+            [](auto& b) { return b.load(std::memory_order_relaxed); }));
 }
 
 bool chunk_processor_base::running() const noexcept {
@@ -96,5 +96,16 @@ void chunk_processor_base::register_v1_hashed_piece_queue(const std::shared_ptr<
 
 void chunk_processor_base::register_v2_hashed_piece_queue(const std::shared_ptr<v2_hashed_piece_queue>& queue)
 { v2_hashed_piece_queue_ = queue; }
+
+chunk_processor_base::~chunk_processor_base()
+{
+    if (started() && !done()) {
+        request_stop();
+        wait();
+    }
+    // Destructor should only be called after all workers are done
+    Ensures(std::all_of(done_.begin(), done_.end(),
+                        [](auto& b) { return b.load(std::memory_order_relaxed); }));
+};
 
 }

@@ -169,9 +169,11 @@ void storage_verifier::wait()
     // finishing all remaining work
     hasher_->request_stop();
     hasher_->wait();
+    Expects(hasher_->done());
 
     verifier_->request_stop();
     verifier_->wait();
+    Expects(verifier_->done());
 
     stopped_ = true;
 }
@@ -252,5 +254,15 @@ double storage_verifier::percentage(const file_entry& entry) const
 
     return verifier_->percentage(file_index);
 }
+
+storage_verifier::~storage_verifier()
+{
+    if (started() && !done()) {
+        std::terminate();
+    }
+    Expects(done());
+}
+
+
 
 } //namespace dottorrent

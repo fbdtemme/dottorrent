@@ -23,6 +23,14 @@ public:
 
     void wait() override;
 
+    bool running() const noexcept override;
+
+    bool started() const noexcept override;
+
+    bool cancelled() const noexcept override;
+
+    bool done() const noexcept override;
+
     std::shared_ptr<v1_piece_queue_type> get_v1_queue() override;
 
     std::shared_ptr<v2_piece_queue_type> get_v2_queue() override;

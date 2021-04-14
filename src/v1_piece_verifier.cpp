@@ -28,6 +28,26 @@ void v1_piece_verifier::wait() {
     processor_.wait();
 }
 
+bool v1_piece_verifier::running() const noexcept
+{
+    return processor_.running();
+};
+
+bool v1_piece_verifier::started() const noexcept
+{
+    return processor_.started();
+}
+
+bool v1_piece_verifier::cancelled() const noexcept
+{
+    return processor_.cancelled();
+}
+
+bool v1_piece_verifier::done() const noexcept
+{
+    return processor_.done();
+}
+
 std::shared_ptr<hashed_piece_processor::v1_piece_queue_type> v1_piece_verifier::get_v1_queue() {
     return processor_.get_queue();
 }

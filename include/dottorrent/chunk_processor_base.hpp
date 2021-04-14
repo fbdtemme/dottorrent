@@ -62,7 +62,7 @@ public:
     /// Number of bytes processed.
     auto bytes_done() const noexcept -> std::size_t;
 
-    ~chunk_processor_base() override = default;
+    ~chunk_processor_base() override;
 
 protected:
     virtual void run(std::stop_token stop_token, int thread_idx) = 0;

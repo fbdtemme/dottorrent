@@ -76,6 +76,7 @@ void v1_chunk_reader::run()
         piece_index_ += pieces_in_chunk;
     }
 
+    chunk_.reset();
     Ensures(piece_index_ == storage.piece_count());
 }
 

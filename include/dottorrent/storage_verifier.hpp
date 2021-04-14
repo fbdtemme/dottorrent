@@ -110,6 +110,8 @@ public:
 
     double percentage(const file_entry& entry) const;
 
+    ~storage_verifier();
+
 private:
     std::reference_wrapper<file_storage> storage_;
     enum protocol protocol_;

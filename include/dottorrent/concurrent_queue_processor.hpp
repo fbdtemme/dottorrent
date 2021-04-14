@@ -47,8 +47,8 @@ public:
         Ensures(!cancelled());
 
         for (std::size_t i = 0; i < threads_.size(); ++i) {
+            done_[i] = false;
             threads_[i] = std::jthread([=, this](std::stop_token st) { run(std::move(st), i); });
-            done_[i].store(false, std::memory_order_relaxed);
         }
         started_.store(true, std::memory_order_release);
     }
@@ -58,10 +58,6 @@ public:
     void request_stop()
     {
         rng::for_each(threads_, [](std::jthread& t) { t.request_stop(); });
-
-        for (auto i = 0; i < threads_.size(); ++i) {
-            queue_->push(std::nullopt);
-        }
     }
 
     /// Signal the workers to shut down and discard pending work.
@@ -79,17 +75,21 @@ public:
         if (!started()) return;
 
         // Wake threads that remain blocked on pop calls.
-        for  (auto i = 0; !done() && i < threads_.size(); ++i) {
+        for  (auto i = 0; i < threads_.size(); ++i) {
             queue_->push(std::nullopt);
+        }
+
+        // Wake threads that remain blocked on pop calls.
+        for  (auto i = 0; !done() && i < threads_.size(); ++i) {
+            queue_->try_push(std::nullopt);
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
 
         // should all be finished by now and ready to join
         for (auto& t : threads_) {
-            if (t.joinable()) {
-                t.join();
-            }
+            t.join();
         }
+        Expects(done());
     }
 
     bool running() const noexcept
@@ -120,9 +120,20 @@ public:
     std::shared_ptr<const queue_type> get_queue() const
     { return queue_; }
 
+    ~concurrent_queue_processor()
+    {
+        if (started() && !done()) {
+            request_stop();
+            wait();
+        }
+    }
+
 private:
     void run(std::stop_token stop_token, int thread_idx)
     {
+        Ensures(stop_token.stop_possible());
+        Ensures(done_[thread_idx] == false);
+
         std::optional<parameter_type> item {};
 
         // Process tasks until stopped is set
@@ -144,6 +155,7 @@ private:
             }
         }
         done_[thread_idx] = true;
+        Expects(queue_->size() == 0);
     }
 
     std::vector<std::jthread> threads_;

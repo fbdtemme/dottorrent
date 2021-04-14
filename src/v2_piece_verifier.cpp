@@ -35,6 +35,26 @@ void v2_piece_verifier::wait() {
     processor_.wait();
 }
 
+bool v2_piece_verifier::running() const noexcept
+{
+    return processor_.running();
+};
+
+bool v2_piece_verifier::started() const noexcept
+{
+    return processor_.started();
+}
+
+bool v2_piece_verifier::cancelled() const noexcept
+{
+    return processor_.cancelled();
+}
+
+bool v2_piece_verifier::done() const noexcept
+{
+    return processor_.done();
+}
+
 std::shared_ptr<v2_piece_verifier::v1_piece_queue_type> v2_piece_verifier::get_v1_queue() {
     return nullptr;
 }

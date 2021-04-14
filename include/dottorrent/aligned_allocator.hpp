@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <iostream>
+#include <cstdlib>
 
 namespace dottorrent {
 

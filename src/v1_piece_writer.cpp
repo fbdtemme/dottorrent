@@ -26,6 +26,26 @@ void v1_piece_writer::wait() {
     processor_.wait();
 }
 
+bool v1_piece_writer::running() const noexcept
+{
+    return processor_.running();
+};
+
+bool v1_piece_writer::started() const noexcept
+{
+    return processor_.started();
+}
+
+bool v1_piece_writer::cancelled() const noexcept
+{
+    return processor_.cancelled();
+}
+
+bool v1_piece_writer::done() const noexcept
+{
+    return processor_.done();
+}
+
 std::shared_ptr<v1_piece_writer::v1_piece_queue_type> v1_piece_writer::get_v1_queue() {
     return processor_.get_queue();
 }

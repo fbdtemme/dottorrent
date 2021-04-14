@@ -5,6 +5,7 @@ namespace dottorrent {
 void chunk_hasher_multi_buffer::run(std::stop_token stop_token, int thread_idx)
 {
     Expects(stop_token.stop_possible());
+    Expects(done_[thread_idx] == false);
 
     // copy the global hasher object to a per-thread hasher
     std::vector<std::unique_ptr<multi_buffer_hasher>> hashers{};

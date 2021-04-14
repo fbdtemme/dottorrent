@@ -35,15 +35,15 @@ void chunk_reader::start() {
     started_.store(true, std::memory_order_release);
 }
 
-void chunk_reader::request_cancellation() noexcept { cancelled_.store(true, std::memory_order_relaxed); }
+void chunk_reader::request_cancellation() noexcept {
+    cancelled_.store(true, std::memory_order_relaxed);
+}
 
 void chunk_reader::wait() {
     if (!started())
         throw std::logic_error("not started");
 
-    if (thread_.joinable()) {
-        thread_.join();
-    }
+    thread_.join();
 }
 
 bool chunk_reader::started() const noexcept

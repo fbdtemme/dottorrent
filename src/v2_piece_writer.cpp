@@ -39,6 +39,42 @@ void v2_piece_writer::wait() {
     v2_processor_.wait();
 }
 
+bool v2_piece_writer::running() const noexcept
+{
+    auto res = v2_processor_.running();
+    if (add_v1_compatibility_) {
+        res = res && v1_processor_.running();
+    }
+    return res;
+};
+
+bool v2_piece_writer::started() const noexcept
+{
+    auto res = v2_processor_.started();
+    if (add_v1_compatibility_) {
+        res = res && v1_processor_.started();
+    }
+    return res;
+}
+
+bool v2_piece_writer::cancelled() const noexcept
+{
+    auto res = v2_processor_.cancelled();
+    if (add_v1_compatibility_) {
+        res = res && v1_processor_.cancelled();
+    }
+    return res;
+}
+
+bool v2_piece_writer::done() const noexcept
+{
+    auto res = v2_processor_.done();
+    if (add_v1_compatibility_) {
+        res = res && v1_processor_.done();
+    }
+    return res;
+}
+
 std::shared_ptr<v2_piece_writer::v1_piece_queue_type> v2_piece_writer::get_v1_queue() {
     if (add_v1_compatibility_) return v1_processor_.get_queue();
     return nullptr;
