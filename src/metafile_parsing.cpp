@@ -241,8 +241,7 @@ void parse_similar_torrents(const T& data, metafile& m)
         if (const auto it = dict.find(key); it != dict.end()) {
             const auto& desc = get_list(it->second);
             for (const auto& c : desc) {
-                m.add_similar_torrent(
-                        make_hash_from_hex<sha1_hash>(get_string(c)));
+                m.add_similar_torrent(sha1_hash(get_string(c)));
             }
         }
     } catch (bc::bad_access& e) {
