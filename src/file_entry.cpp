@@ -226,7 +226,8 @@ bool file_entry::operator==(const file_entry& rhs) const noexcept
 
 std::strong_ordering file_entry::operator<=>(const file_entry& rhs) const noexcept
 {
-    return this->path_ <=> rhs.path_;
+    // Workaround for missing std::filesystem::path::operator<=> in GCC 10.2.0
+    return this->path_.compare(rhs.path()) <=> 0;
 }
 
 
