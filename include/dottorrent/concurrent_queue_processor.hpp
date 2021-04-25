@@ -155,7 +155,13 @@ private:
             }
         }
         done_[thread_idx] = true;
-        Expects(queue_->size() == 0);
+
+        // Remaining pieces should all be empty
+        if (queue_->size() != 0) {
+            while (queue_->try_pop(item)) {
+                Ensures(!item.has_value());
+            }
+        }
     }
 
     std::vector<std::jthread> threads_;
