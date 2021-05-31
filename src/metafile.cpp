@@ -353,7 +353,15 @@ void dump_file(const metafile& m, const fs::path& dst)
 /// Returns the v1 info hash.
 sha1_hash info_hash_v1(const metafile& m)
 {
-    auto s = bencode::encode(detail::make_bvalue_infodict_v1(m));
+    std::string s;
+
+    const auto protocol = m.storage().protocol();
+    if (protocol == dottorrent::protocol::hybrid) {
+        s = bencode::encode(detail::make_bvalue_infodict_hybrid(m));
+    } else {
+        s = bencode::encode(detail::make_bvalue_infodict_v1(m));
+    }
+
     sha1_hash hash {};
     auto hasher = make_hasher(hash_function::sha1);
     hasher->update({reinterpret_cast<const std::byte*>(s.data()), s.size()});
