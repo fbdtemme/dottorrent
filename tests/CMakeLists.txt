@@ -21,7 +21,7 @@ add_executable(dottorrent-tests
         percent_encoding.cpp
         magnet_uri.cpp
         hashers/test_isal_multibuffer_hasher.cpp
-)
+        test_infohash.cpp)
 
 
 target_link_libraries(dottorrent-tests
