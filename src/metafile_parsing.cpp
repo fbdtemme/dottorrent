@@ -132,8 +132,21 @@ void parse_collections(const T& data, metafile& m)
 
     const auto& dict = bc::get_dict(data);
     constexpr auto key = "collections"sv;
+    const auto& info_view = dict.at("info");
+    const auto& info_dict = get_dict(info_view);
+
+    // From BEP-38:
+    // These keys can be either inside or outside of the info dict.
+    // If a key is both inside and outside the info dict, the values are merged.
+    // Based on these hints, the client can deduce which files it already has and re-use that data.
 
     try {
+        if (const auto it = info_dict.find(key); it != dict.end()) {
+            const auto& desc = get_list(it->second);
+            for (const auto& c : desc) {
+                m.add_collection(get_string(c));
+            }
+        }
         if (const auto it = dict.find(key); it != dict.end()) {
             const auto& desc = get_list(it->second);
             for (const auto& c : desc) {
@@ -235,13 +248,35 @@ void parse_similar_torrents(const T& data, metafile& m)
     Expects(holds_dict(data));
 
     const auto& dict = get_dict(data);
+    const auto& info_view = dict.at("info");
+    const auto& info_dict = get_dict(info_view);
     constexpr auto key = "similar"sv;
 
+    auto add_infohashes = [&](const auto& hash_string) {
+        if (std::size(hash_string) == sha1_hash::size_bytes) {
+            m.add_similar_torrent(info_hash(protocol::v1, hash_string));
+        }
+        else if (std::size(hash_string) == sha256_hash::size_bytes) {
+            m.add_similar_torrent(info_hash(protocol::v2, hash_string));
+        }
+        else {
+            throw parse_error(key, "invalid infohash length: expected 20 or 32 bytes");
+        }
+    };
+
     try {
+        if (const auto it = info_dict.find(key); it != dict.end()) {
+            const auto& desc = get_list(it->second);
+            for (const auto& c : desc) {
+                auto hash_string = get_string(c);
+                add_infohashes(hash_string);
+            }
+        }
         if (const auto it = dict.find(key); it != dict.end()) {
             const auto& desc = get_list(it->second);
             for (const auto& c : desc) {
-                m.add_similar_torrent(sha1_hash(get_string(c)));
+                auto hash_string = get_string(c);
+                add_infohashes(hash_string);
             }
         }
     } catch (bc::bad_access& e) {
