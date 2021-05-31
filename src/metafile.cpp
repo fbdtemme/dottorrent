@@ -9,7 +9,7 @@
 #include <bencode/events/encode_json_to.hpp>
 #include <dottorrent/metafile_parsing.hpp>
 #include <dottorrent/metafile_serialization.hpp>
-
+#include <dottorrent/info_hash.hpp>
 #include "dottorrent/metafile.hpp"
 #include "dottorrent/serialization/all.hpp"
 
@@ -180,13 +180,13 @@ std::chrono::seconds metafile::creation_date() const
 void metafile::set_creation_date(std::time_t time)
 { set_creation_date(std::chrono::system_clock::from_time_t(time)); }
 
-const std::unordered_set<sha1_hash>& metafile::similar_torrents() const
+const std::unordered_set<info_hash>& metafile::similar_torrents() const
 { return similar_torrents_; }
 
-void metafile::add_similar_torrent(sha1_hash similar_torrent)
+void metafile::add_similar_torrent(const info_hash& similar_torrent)
 { similar_torrents_.insert(similar_torrent); }
 
-void metafile::remove_similar_torrent(sha1_hash similar_torrent)
+void metafile::remove_similar_torrent(const info_hash& similar_torrent)
 { similar_torrents_.erase(similar_torrent); }
 
 void metafile::clear_similar_torrents()
@@ -369,7 +369,7 @@ sha1_hash info_hash_v1(const metafile& m)
     return hash;
 }
 
-/// Returns the v2 info hash
+/// Return the v2 info hash.
 sha256_hash info_hash_v2(const metafile& m)
 {
     std::string s;
@@ -392,6 +392,22 @@ sha256_hash info_hash_v2(const metafile& m)
 sha1_hash truncate_v2_hash(sha256_hash hash)
 {
     return sha1_hash(std::span{hash.data(), sha1_hash::size_bytes});
+}
+
+info_hash make_info_hash(const metafile& m)
+{
+    const auto protocol = m.storage().protocol();
+
+    switch (protocol) {
+    case protocol::v1:
+        return info_hash(info_hash_v1(m));
+    case protocol::v2:
+        return info_hash(info_hash_v2(m));
+    case protocol::hybrid:
+        return info_hash(info_hash_v1(m), info_hash_v2(m));
+    default:
+        throw std::invalid_argument("invalid protocol version");
+    }
 }
 
 } // namespace dottorrent

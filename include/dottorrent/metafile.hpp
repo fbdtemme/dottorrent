@@ -26,11 +26,12 @@
 #include <bencode/traits/string_view.hpp>
 #include <bencode/traits/unordered_set.hpp>
 
-#include "dht_node.hpp"
-#include "file_storage.hpp"
-#include "announce_url.hpp"
-#include "announce_url_list.hpp"
-#include "serialization/all.hpp"
+#include "dottorrent/dht_node.hpp"
+#include "dottorrent/file_storage.hpp"
+#include "dottorrent/announce_url.hpp"
+#include "dottorrent/info_hash.hpp"
+#include "dottorrent/announce_url_list.hpp"
+#include "dottorrent/serialization/all.hpp"
 
 namespace dottorrent {
 
@@ -111,11 +112,11 @@ public:
     void set_creation_date(std::chrono::time_point<std::chrono::system_clock, Duration> time)
     { creation_date_ = std::chrono::duration_cast<std::chrono::seconds>(time.time_since_epoch()).count(); }
 
-    const std::unordered_set<sha1_hash>& similar_torrents() const;
+    const std::unordered_set<info_hash>& similar_torrents() const;
 
-    void add_similar_torrent(sha1_hash similar_torrent);
+    void add_similar_torrent(const info_hash& similar_torrent);
 
-    void remove_similar_torrent(sha1_hash similar_torrent);
+    void remove_similar_torrent(const info_hash& similar_torrent);
 
     void clear_similar_torrents();
 
@@ -166,10 +167,9 @@ private:
     bool private_ = false;
 
     std::string source_;
-    std::unordered_set<sha1_hash> similar_torrents_;
+    std::unordered_set<info_hash> similar_torrents_;
     std::unordered_set<std::string> collections_;
 };
-
 
 sha1_hash info_hash_v1(const metafile& m);
 

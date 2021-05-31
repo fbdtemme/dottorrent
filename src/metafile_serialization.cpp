@@ -258,7 +258,26 @@ bencode::bvalue make_bvalue_common(const metafile& m)
         btorrent.insert_or_assign("httpseeds", m.http_seeds());
     }
     if (!m.similar_torrents().empty()) {
-        btorrent.insert_or_assign("similar", m.similar_torrents());
+        auto [it, success] = btorrent.emplace("similar", bc::btype::list);
+        auto& slist = get_list(it->second);
+
+        for (const auto& k : m.similar_torrents()) {
+            switch (k.version()) {
+            case protocol::v1:
+                slist.push_back(k.v1());
+                break;
+            case protocol::v2:
+                slist.push_back(k.v2());
+                break;
+            case protocol::hybrid: {
+                slist.push_back(k.v1());
+                slist.push_back(k.v2());
+                break;
+            }
+            default:
+                throw std::invalid_argument("invalid empty info_hash");
+            }
+        }
     }
     if (!m.web_seeds().empty()) {
         btorrent.insert_or_assign("url-list", m.web_seeds());
