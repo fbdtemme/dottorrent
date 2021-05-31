@@ -29,6 +29,9 @@ struct dht_node
     // friends for structured binding support
     template <std::size_t N> friend const auto& get(const dht_node&);
     template <std::size_t N> friend auto& get(dht_node&);
+
+    explicit operator std::string() const
+    { return fmt::format("{}:{}", url, port); }
 };
 
 } // namespace dottorrent
