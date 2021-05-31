@@ -141,7 +141,7 @@ void parse_collections(const T& data, metafile& m)
     // Based on these hints, the client can deduce which files it already has and re-use that data.
 
     try {
-        if (const auto it = info_dict.find(key); it != dict.end()) {
+        if (const auto it = info_dict.find(key); it != info_dict.end()) {
             const auto& desc = get_list(it->second);
             for (const auto& c : desc) {
                 m.add_collection(get_string(c));
@@ -265,7 +265,7 @@ void parse_similar_torrents(const T& data, metafile& m)
     };
 
     try {
-        if (const auto it = info_dict.find(key); it != dict.end()) {
+        if (const auto it = info_dict.find(key); it != info_dict.end()) {
             const auto& desc = get_list(it->second);
             for (const auto& c : desc) {
                 auto hash_string = get_string(c);
