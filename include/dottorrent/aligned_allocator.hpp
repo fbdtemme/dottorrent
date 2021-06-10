@@ -5,6 +5,10 @@
 #include <iostream>
 #include <cstdlib>
 
+#ifdef _WIN32
+#include <malloc.h>
+#endif
+
 namespace dottorrent {
 
 /// Allocator for aligned data.
@@ -104,7 +108,11 @@ public:
             throw std::length_error("aligned_allocator<T>::allocate() - Integer overflow.");
         }
 
+#ifdef _WIN32
+        void * const pv = _aligned_malloc(n * sizeof(T), Alignment);
+#else
         void * const pv = std::aligned_alloc(Alignment, n * sizeof(T));
+#endif
 
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
         if (pv == nullptr)
@@ -117,7 +125,11 @@ public:
 
     void deallocate(T * const p, const std::size_t n) const
     {
+#ifdef _WIN32
+       _aligned_free(p);
+#else
         std::free(p);
+#endif
     }
 
     // The following will be the same for all allocators that ignore hints.
