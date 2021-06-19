@@ -5,9 +5,11 @@
 #include <iostream>
 #include <cstdlib>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MINGW32__)
+#define USE_ALLIGED_MALLOC
 #include <malloc.h>
 #endif
+
 
 namespace dottorrent {
 
@@ -108,7 +110,7 @@ public:
             throw std::length_error("aligned_allocator<T>::allocate() - Integer overflow.");
         }
 
-#ifdef _WIN32
+#ifdef USE_ALLIGED_MALLOC
         void * const pv = _aligned_malloc(n * sizeof(T), Alignment);
 #else
         void * const pv = std::aligned_alloc(Alignment, n * sizeof(T));
@@ -125,7 +127,7 @@ public:
 
     void deallocate(T * const p, const std::size_t n) const
     {
-#ifdef _WIN32
+#ifdef USE_ALLIGED_MALLOC
        _aligned_free(p);
 #else
         std::free(p);
@@ -141,3 +143,5 @@ public:
 };
 
 } // namespace dottorrent
+
+#undef USE_ALLIGED_MALLOC

@@ -30,6 +30,11 @@
     #include <endian_helper.h>
 #endif
 
+#if defined(_WIN32) || defined(__MINGW32__)
+#define USE_ALLIGED_MALLOC
+#include <malloc.h>
+#endif
+
 
 namespace isal {
 
@@ -41,7 +46,11 @@ class multi_buffer_hasher_impl : public multi_buffer_hasher
 public:
     multi_buffer_hasher_impl()
     {
+#ifdef USE_ALLIGED_MALLOC
+        context_manager_ = static_cast<MGR*>(_aligned_malloc(sizeof(MGR), 64));
+#else
         context_manager_ = static_cast<MGR*>(aligned_alloc(64, sizeof(MGR)));
+#endif
         Init(context_manager_);
     }
 
@@ -148,7 +157,11 @@ public:
         for (auto ctx : context_pool_) {
             deallocate_hash_context(ctx);
         }
-        free(context_manager_);
+#ifdef USE_ALLIGED_MALLOC
+        _aligned_free(context_manager_);
+#else
+        std::free(context_manager_);
+#endif
     }
 
 private:
@@ -157,7 +170,11 @@ private:
     {
         index = context_pool_.size();
         context_pool_.push_back(nullptr);
+#ifdef USE_ALLIGED_MALLOC
+        CTX* hash_ctx = static_cast<CTX*>(_aligned_malloc(sizeof(CTX), 64));
+#else
         CTX* hash_ctx = static_cast<CTX*>(std::aligned_alloc(64, sizeof(CTX)));
+#endif
         hash_ctx_init(hash_ctx);
         hash_ctx->user_data = new user_data;
         static_cast<user_data*>(hash_ctx->user_data)->index = index;
@@ -169,7 +186,11 @@ private:
     void deallocate_hash_context(CTX* ctx)
     {
         delete static_cast<user_data*>(ctx->user_data);
-        free(ctx);
+#ifdef USE_ALLIGED_MALLOC
+        _aligned_free(ctx);
+#else
+       std::free(ctx);
+#endif
     }
 
     MGR* context_manager_ {};
@@ -235,3 +256,5 @@ static const auto supported_hash_functions = std::unordered_set {
 
 
 }
+
+#undef USE_ALLIGED_MALLOC
