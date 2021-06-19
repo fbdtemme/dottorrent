@@ -10,18 +10,19 @@
 
 #include <gsl-lite/gsl-lite.hpp>
 
-//
-#if __has_include("<isa-l_crypto/md5_mb.h>") \
-        &&__has_include("<isa-l_crypto/sha1_mb.h>")  \
-        &&__has_include("<isa-l_crypto/sha256_mb.h>")\
-        &&__has_include("<isa-l_crypto/sha512_mb.h>")\
-        &&__has_include("<isa-l_crypto/endian_helper.h>")
-    #include <isa-l_crypto/md5_mb.h>
-    #include <isa-l_crypto/sha1_mb.h>
-    #include <isa-l_crypto/sha256_mb.h>
-    #include <isa-l_crypto/sha512_mb.h>
-    #include <isa-l_crypto/endian_helper.h>
-#else
+#if defined __has_include
+    #if __has_include("<isa-l_crypto/md5_mb.h>") \
+            &&__has_include("<isa-l_crypto/sha1_mb.h>")  \
+            &&__has_include("<isa-l_crypto/sha256_mb.h>")\
+            &&__has_include("<isa-l_crypto/sha512_mb.h>")\
+            &&__has_include("<isa-l_crypto/endian_helper.h>")
+        #include <isa-l_crypto/md5_mb.h>
+        #include <isa-l_crypto/sha1_mb.h>
+        #include <isa-l_crypto/sha256_mb.h>
+        #include <isa-l_crypto/sha512_mb.h>
+        #include <isa-l_crypto/endian_helper.h>
+    #else
+#endif
     #include <md5_mb.h>
     #include <sha1_mb.h>
     #include <sha256_mb.h>

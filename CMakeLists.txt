@@ -65,11 +65,6 @@ target_compile_features(dottorrent PUBLIC cxx_std_20)
 
 include(external/external.cmake)
 
-if (WIN32)
-    message(STATUS "Windows platform detected: Setting default crypto backend to WinCNG")
-    set(DOTTORRENT_CRYPTO_LIB "WinCNG")
-endif()
-
 string(TOLOWER ${DOTTORRENT_CRYPTO_LIB} DOTTORRENT_CRYPTO_LIB)
 string(TOLOWER ${DOTTORRENT_MB_CRYPTO_LIB} DOTTORRENT_MB_CRYPTO_LIB)
 
