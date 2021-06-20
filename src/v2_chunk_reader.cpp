@@ -1,7 +1,7 @@
 #include "dottorrent/v2_chunk_reader.hpp"
 
-#include <fmt/format.h>
 #include <fstream>
+#include <fmt/format.h>
 
 namespace dottorrent {
 
@@ -64,7 +64,8 @@ void v2_chunk_reader::run()
 
             if (f_.eof()) break;
             if (f_.fail()) {
-                throw std::runtime_error(fmt::format("I/O error reading: {}", file_entry.path().string()));
+                throw std::runtime_error(
+                        fmt::format("I/O error reading: {}", file_entry.path().string()));
             }
         }
         f_.close();
