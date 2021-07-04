@@ -3,7 +3,7 @@ if (TARGET fmt::fmt)
     return()
 endif()
 
-find_package(fmt QUIET)
+find_package(fmt 8.0.0 QUIET)
 if (fmt_FOUND)
     log_module_found(fmt)
     return()
