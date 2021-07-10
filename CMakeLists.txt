@@ -13,7 +13,7 @@ include(GNUInstallDirs)
 
 option(DOTTORRENT_TESTS      "Build tests" ON)
 option(DOTTORRENT_COVERAGE   "Enable coverage flags" OFF)
-set(DOTTORRENT_CRYPTO_LIB "openssl" CACHE STRING
+set(DOTTORRENT_CRYPTO_LIB    "openssl" CACHE STRING
     "The cryptographic library to link against. Options are: openssl, wincng, wolfssl")
 set(DOTTORRENT_MB_CRYPTO_LIB "openssl" CACHE STRING
         "The multibuffer cryptographic library to link against. Options are: none, isal")

@@ -21,8 +21,8 @@
         #include <isa-l_crypto/sha256_mb.h>
         #include <isa-l_crypto/sha512_mb.h>
         #include <isa-l_crypto/endian_helper.h>
-    #else
-#endif
+    #endif
+#else
     #include <md5_mb.h>
     #include <sha1_mb.h>
     #include <sha256_mb.h>
