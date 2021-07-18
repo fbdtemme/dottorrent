@@ -39,8 +39,8 @@ void v2_chunk_hasher_mb::hash_chunk(multi_buffer_hasher& sha256_hasher, multi_bu
     file_storage& storage = storage_.get();
     Expects(chunk.file_index < storage.file_count());
 
-    // Piece without any data indicate a missing file.
-    // We do not upgrade bytes hashed but mark the whole file as done.
+    // Piece without any data indicates a missing file.
+    // We do not upgrade bytes hashed but mark the file as done.
     if (chunk.data == nullptr) {
         auto file_size = storage[chunk.file_index].file_size();
         bytes_done_.fetch_add(file_size, std::memory_order_relaxed);
@@ -90,7 +90,7 @@ void v2_chunk_hasher_mb::hash_chunk(multi_buffer_hasher& sha256_hasher, multi_bu
             pieces_to_process = pieces_in_chunk != 0 ? pieces_in_chunk-1: 0;
         }
 
-        sha1_hasher.resize(pieces_to_process);
+        sha1_hasher.resize(pieces_in_chunk);
         std::size_t piece_in_chunk_index = 0;
         for (; piece_in_chunk_index < pieces_to_process; ++piece_in_chunk_index)
         {

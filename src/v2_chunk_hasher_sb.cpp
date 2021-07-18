@@ -114,16 +114,17 @@ void v2_chunk_hasher_sb::hash_chunk(single_buffer_hasher& sha256_hasher, single_
                 // add the final partial piece and pad the rest of the piece
                 auto final_piece = data.subspan(piece_in_chunk_index*piece_size);
                 sha1_hasher.update(final_piece);
+                std::size_t padding_size = piece_size-final_piece.size();
 
                 {
                     std::unique_lock lck{padding_mutex_};
-                    padding_.resize((piece_size-final_piece.size()), std::byte{0});
+                    padding_.resize(padding_size, std::byte{0});
                     sha1_hasher.update(padding_);
                 }
 
                 sha1_hasher.finalize_to(piece_hash);
                 process_piece_hash(chunk.piece_index+piece_in_chunk_index, chunk.file_index, piece_hash);
-                bytes_hashed_.fetch_add(final_piece.size()+padding_.size(), std::memory_order::relaxed);
+                bytes_hashed_.fetch_add(final_piece.size()+padding_size, std::memory_order::relaxed);
             }
             else {
                 auto final_piece = data.subspan(piece_in_chunk_index*piece_size);
