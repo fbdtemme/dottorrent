@@ -46,10 +46,13 @@ class multi_buffer_hasher_impl : public multi_buffer_hasher
 public:
     multi_buffer_hasher_impl()
     {
+        constexpr std::size_t alignment = 64;
+        constexpr std::size_t n = ((sizeof(MGR) + alignment -1) / alignment) * alignment;
+
 #ifdef USE_ALLIGED_MALLOC
-        context_manager_ = static_cast<MGR*>(_aligned_malloc(sizeof(MGR), 64));
+        context_manager_ = static_cast<MGR*>(_aligned_malloc(n, alignment));
 #else
-        context_manager_ = static_cast<MGR*>(aligned_alloc(64, sizeof(MGR)));
+        context_manager_ = static_cast<MGR*>(aligned_alloc(alignment, n));
 #endif
         Init(context_manager_);
     }
