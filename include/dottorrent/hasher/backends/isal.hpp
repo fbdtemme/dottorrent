@@ -91,6 +91,8 @@ public:
 
     void submit_update(std::size_t job_id, std::span<const std::byte> data) override
     {
+        Expects(job_id < context_pool_.size());
+
         auto* ctx = context_pool_[job_id];
         while (hash_ctx_processing(ctx)) {
             Flush(context_manager_);
@@ -100,6 +102,8 @@ public:
 
     void submit_last(std::size_t job_id, std::span<const std::byte> data) override
     {
+        Expects(job_id < context_pool_.size());
+
         auto* ctx = context_pool_[job_id];
         while (hash_ctx_processing(ctx)) {
              Flush(context_manager_);
@@ -176,11 +180,18 @@ private:
     {
         index = context_pool_.size();
         context_pool_.push_back(nullptr);
+
+        constexpr std::size_t alignment = 64;
+        constexpr std::size_t n = ((sizeof(CTX) + alignment -1) / alignment) * alignment;
+
 #ifdef USE_ALLIGED_MALLOC
-        CTX* hash_ctx = static_cast<CTX*>(_aligned_malloc(sizeof(CTX), 64));
+        CTX* hash_ctx = static_cast<CTX*>(_aligned_malloc(n, alignment));
 #else
-        CTX* hash_ctx = static_cast<CTX*>(std::aligned_alloc(64, sizeof(CTX)));
+        CTX* hash_ctx = static_cast<CTX*>(std::aligned_alloc(alignment, n));
 #endif
+        if (hash_ctx == NULL)
+            throw std::runtime_error("could not allocate hash context");
+
         hash_ctx_init(hash_ctx);
         hash_ctx->user_data = new user_data;
         static_cast<user_data*>(hash_ctx->user_data)->index = index;
