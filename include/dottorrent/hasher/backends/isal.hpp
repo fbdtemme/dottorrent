@@ -52,7 +52,7 @@ public:
 #ifdef USE_ALLIGED_MALLOC
         context_manager_ = static_cast<MGR*>(_aligned_malloc(n, alignment));
 #else
-        context_manager_ = static_cast<MGR*>(aligned_alloc(alignment, n));
+        context_manager_ = static_cast<MGR*>(std::aligned_alloc(alignment, n));
 #endif
         Init(context_manager_);
     }
