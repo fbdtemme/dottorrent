@@ -54,6 +54,9 @@ public:
 #else
         context_manager_ = static_cast<MGR*>(std::aligned_alloc(alignment, n));
 #endif
+        if (context_manager_ == NULL)
+            throw std::runtime_error("could not allocate context manager");
+
         Init(context_manager_);
     }
 
