@@ -105,7 +105,11 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
         }
 
         file_info["length"] = file.file_size();
-        file_info["pieces root"] = file.pieces_root();
+
+        // piece root for empty files can be omitted
+        if (file.file_size() != 0) {
+            file_info["pieces root"] = file.pieces_root();
+        }
 
         if (file.is_symlink()) {
             file_info["symlink path"] = file.symlink_path().value();
@@ -198,7 +202,11 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
         }
 
         file_info["length"] = file.file_size();
-        file_info["pieces root"] = file.pieces_root();
+
+        // pieces root for empty files can be omitted
+        if (file.file_size() != 0) {
+            file_info["pieces root"] = file.pieces_root();
+        }
 
         if (file.is_symlink()) {
             file_info["symlink path"] = file.symlink_path().value();
