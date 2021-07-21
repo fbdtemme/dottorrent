@@ -66,7 +66,7 @@ void v2_chunk_hasher_sb::hash_chunk(single_buffer_hasher& sha256_hasher, single_
         bytes_hashed_.fetch_add(v2_block_size);
     }
 
-    // last block can be smaller then tlockhe block size!
+    // last block can be smaller then the block size!
     auto final_block = data.subspan(i*v2_block_size);
     sha256_hasher.update(final_block);
     sha256_hasher.finalize_to(leaf);
