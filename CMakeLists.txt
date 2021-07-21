@@ -51,8 +51,6 @@ add_library(dottorrent
         src/v1_piece_writer.cpp
         src/v2_checksum_hasher.cpp
         src/v2_chunk_hasher_mb.cpp
-        src/v2_chunk_hasher_mixin.cpp
-        src/v2_chunk_hasher_sb.cpp
         src/v2_chunk_hasher_sb.cpp
         src/v2_chunk_reader.cpp
         src/v2_piece_verifier.cpp
