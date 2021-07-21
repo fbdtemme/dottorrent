@@ -63,6 +63,7 @@ void v2_chunk_hasher_mb::hash_chunk(multi_buffer_hasher& sha256_hasher, multi_bu
         for ( ; block_in_chunk_idx < blocks_in_chunk-1; ++block_in_chunk_idx) {
             sha256_hasher.submit(block_in_chunk_idx, data.subspan(block_in_chunk_idx * v2_block_size, v2_block_size));
         }
+        // last chunk can be smaller then v2_block_size
         sha256_hasher.submit(block_in_chunk_idx, data.subspan(block_in_chunk_idx*v2_block_size));
     }
 
@@ -116,7 +117,7 @@ void v2_chunk_hasher_mb::hash_chunk(multi_buffer_hasher& sha256_hasher, multi_bu
         }
 
         sha1_hash piece_hash {};
-        std::size_t total_jobs = piece_in_chunk_index;
+        std::size_t total_jobs = pieces_in_chunk;
         piece_in_chunk_index = 0;
         for (; piece_in_chunk_index < total_jobs; ++piece_in_chunk_index)
         {
