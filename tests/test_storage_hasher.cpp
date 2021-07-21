@@ -82,12 +82,6 @@ TEST_CASE("test v2 hashing")
         hasher.wait();
         CHECK(hasher.done());
 
-        std::vector<bool> has_v2_data{};
-        for (const auto& e : storage) {
-            has_v2_data.push_back(e.has_v2_data());
-        }
-
-        CHECK(rng::all_of(has_v2_data, std::identity{}));
         v2_single_buffer_test_dir_infohash = info_hash_v2(m);
     }
 
@@ -100,6 +94,7 @@ TEST_CASE("test v2 hashing")
         CHECK_FALSE(hasher.done());
         hasher.wait();
         CHECK(hasher.done());
+
         v2_multi_buffer_test_dir_infohash = info_hash_v2(m);
     }
 }
@@ -124,6 +119,13 @@ TEST_CASE("test hybrid hashing")
     CHECK_FALSE(hasher.done());
     hasher.wait();
     CHECK(hasher.done());
+
+    std::vector<bool> has_v2_data{};
+    for (const auto& e : storage) {
+        has_v2_data.push_back(e.has_v2_data());
+    }
+
+    CHECK(rng::all_of(has_v2_data, std::identity{}));
 }
 
 
