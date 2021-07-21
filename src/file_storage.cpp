@@ -237,12 +237,14 @@ auto choose_piece_size(file_storage& storage) -> std::size_t
 }
 
 /// Check if a directory contains only padding files.
+// note that this is highly inefficient!
 bool is_padding_directory(const file_storage& storage, const fs::path& directory)
 {
     bool all_padding = true;
+    auto directory_string = directory.string();
 
     for (const auto& f: storage) {
-        if (f.path().string().starts_with(directory.string())) {
+        if (f.path().string().starts_with(directory_string)) {
             all_padding &= f.is_padding_file();
             if (!all_padding)
                 return false;
@@ -255,8 +257,10 @@ bool is_padding_directory(const file_storage& storage, const fs::path& directory
 std::size_t directory_count(const file_storage& storage, const fs::path& root, bool include_padding_directories)
 {
     std::set<std::string> directories {};
+    auto root_string = root.string();
+
     for (const auto& f : storage) {
-        if (!root.empty() && !f.path().string().starts_with(root.string())) {
+        if (!root.empty() && !f.path().string().starts_with(root_string)) {
             continue;
         }
 
