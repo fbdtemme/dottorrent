@@ -432,13 +432,18 @@ static file_entry parse_file_entry_v2(const T& data, const fs::path& path)
     }
     std::size_t size = get_integer(length_field_it->second);
 
+    std::optional<sha256_hash> pieces_root;
     auto pieces_root_it = file_dict.find("pieces root");
 
     if (pieces_root_it == file_dict.end()) {
-        throw parse_error("name", "missing pieces root");
+        // empty files may omit the pieces root key
+        if (size > 0) {
+            throw parse_error("pieces root", "missing pieces root");
+        }
+        pieces_root = std::nullopt;
+    } else {
+        pieces_root = sha256_hash(get_string(pieces_root_it->second));
     }
-    auto pieces_root = sha256_hash(get_string(pieces_root_it->second));
-
     // file attributes
     std::optional<file_attributes> attributes = parse_file_attributes(data);
 
@@ -450,7 +455,9 @@ static file_entry parse_file_entry_v2(const T& data, const fs::path& path)
     }
 
     file_entry entry(path, size, attributes, symlink);
-    entry.set_pieces_root(pieces_root);
+    if (pieces_root) {
+        entry.set_pieces_root(*pieces_root);
+    }
 
     for (const auto& [k, v] : file_dict) {
         if (!is_hash_function_name(k))
