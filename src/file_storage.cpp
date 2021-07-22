@@ -97,7 +97,7 @@ enum protocol file_storage::protocol() const noexcept
     bool v1 = !pieces_.empty();
     bool v2 = rng::all_of(files_, [](const file_entry& entry) {
         // all regular files must have v2 data, skip pad files and symlinks
-        if (entry.is_padding_file() || entry.is_symlink()) return true;
+        if (entry.is_padding_file() || entry.is_symlink() || entry.file_size() == 0) return true;
         return entry.has_v2_data();
     });
 

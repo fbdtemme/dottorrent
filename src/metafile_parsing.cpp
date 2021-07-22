@@ -592,7 +592,10 @@ void parse_file_list_and_tree_hybrid(const T& data, metafile& m)
 
     for (auto& v2_entry : v2_entries) {
         auto it = std::find_if(storage.begin(), storage.end(), std::bind_front(path_comparator, v2_entry));
-        it->set_pieces_root(v2_entry.pieces_root());
+        // empty files can ommit the pieces root
+        if (v2_entry.file_size() > 0) {
+            it->set_pieces_root(v2_entry.pieces_root());
+        }
     }
 };
 
