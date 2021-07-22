@@ -93,6 +93,7 @@ public:
 
     void clear()
     {
+        index_valid_ = false;
         files_.clear();
         total_file_size_ = 0;
     }
@@ -231,7 +232,15 @@ public:
 
     bool operator==(const file_storage& other) const;
 
+    bool index_valid() const noexcept;
+
+    void index() const;
+
+    // TODO: create directory_iterator class instead of returning a vector with pointers
+    std::vector<const file_entry*> directory_contents(const fs::path& directory) const;
+
 private:
+
     // Total size of all file_entry.
     std::size_t total_file_size_ {};
     // Total size of all regular file entries, excluded padding files.
@@ -245,6 +254,9 @@ private:
     /// v1 pieces
     std::vector<sha1_hash> pieces_ {};
     std::mutex pieces_mutex_ {};
+
+    mutable bool index_valid_;
+    mutable std::vector<std::size_t> files_index_;
 };
 
 

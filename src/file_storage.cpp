@@ -40,6 +40,7 @@ void file_storage::set_root_directory(const fs::path& root)
 
 void file_storage::add_file(const file_entry& file)
 {
+    index_valid_ = false;
     auto s = file.file_size();
     total_file_size_ += s;
     if (!file.is_padding_file()) { total_regular_file_size_ += s; }
@@ -48,6 +49,7 @@ void file_storage::add_file(const file_entry& file)
 
 void file_storage::add_file(file_entry&& file)
 {
+    index_valid_ = false;
     auto s = file.file_size();
     total_file_size_ += s;
     if (!file.is_padding_file()) { total_regular_file_size_ += s; }
@@ -62,6 +64,7 @@ void file_storage::add_file(const fs::path& path, file_options options)
 
 void file_storage::remove_file(const file_entry& entry)
 {
+    index_valid_ = false;
     auto it = std::find_if(files_.begin(), files_.end(),
             [&](const file_entry& x) { return x == entry; });
 
@@ -227,7 +230,41 @@ std::size_t file_storage::size() const noexcept
     return files_.size();
 }
 
-auto choose_piece_size(file_storage& storage) -> std::size_t
+bool file_storage::index_valid() const noexcept {
+    return index_valid_;
+}
+
+void file_storage::index() const {
+    files_index_.resize(files_.size());
+    std::iota(files_index_.begin(), files_index_.end(), 0);
+    rng::sort(files_index_, [&](std::size_t lhs, std::size_t rhs) {
+        Expects(lhs < files_.size());
+        Expects(rhs < files_.size());
+        return files_[lhs].path() < files_[rhs].path();
+    });
+    index_valid_ = true;
+}
+
+std::vector<const file_entry*> file_storage::directory_contents(const fs::path& directory) const {
+    if (!index_valid()) { index(); }
+    auto directory_string = directory.string();
+
+    auto first = rng::lower_bound(files_index_, directory, std::ranges::less{},
+            [this](std::size_t index) { return files_[index].path(); });
+    auto last = rng::find_if_not(first, files_index_.end(), [&, this](std::size_t index) {
+        return files_[index].path().string().starts_with(directory_string);
+    });
+
+    std::vector<const file_entry*> results;
+    rng::transform(first, last, std::back_inserter(results), [this](std::size_t i) {
+        return &files_[i];
+    });
+    return results;
+}
+
+
+
+std::size_t choose_piece_size(file_storage& storage)
 {
     double exp = std::log2(storage.total_file_size()) - 9;
     exp = std::min(std::max(15, static_cast<int>(exp)), 24);
@@ -237,19 +274,17 @@ auto choose_piece_size(file_storage& storage) -> std::size_t
 }
 
 /// Check if a directory contains only padding files.
-// note that this is highly inefficient!
 bool is_padding_directory(const file_storage& storage, const fs::path& directory)
 {
     bool all_padding = true;
-    auto directory_string = directory.string();
+    auto dir_contents = storage.directory_contents(directory);
 
-    for (const auto& f: storage) {
-        if (f.path().string().starts_with(directory_string)) {
-            all_padding &= f.is_padding_file();
-            if (!all_padding)
-                return false;
-        }
+    for (auto* f : dir_contents) {
+        all_padding &= f->is_padding_file();
+        if (!all_padding)
+            return false;
     }
+
     return all_padding;
 }
 
@@ -257,6 +292,8 @@ bool is_padding_directory(const file_storage& storage, const fs::path& directory
 std::size_t directory_count(const file_storage& storage, const fs::path& root, bool include_padding_directories)
 {
     std::set<std::string> directories {};
+    std::set<std::string> padding_dir_candidates {};
+
     auto root_string = root.string();
 
     for (const auto& f : storage) {
@@ -264,25 +301,26 @@ std::size_t directory_count(const file_storage& storage, const fs::path& root, b
             continue;
         }
 
+        bool is_padding_dir_candidate = f.is_padding_file();
         fs::path current_dir = "";
         auto it = f.path().begin();
         auto last = std::next(f.path().end(), -1);
 
         while (it != last) {
-            directories.emplace((current_dir / *it).string());
+            auto dir = (current_dir / *it).string();
+            directories.emplace(dir);
+            if (is_padding_dir_candidate) { padding_dir_candidates.emplace(dir); }
             it++;
         }
     }
     if (include_padding_directories)
         return directories.size();
 
-    std::size_t directory_count = 0;
-    for (const auto& dir: directories) {
-        if (!is_padding_directory(storage, dir)) {
-            ++directory_count;
-        }
-    }
-    return directory_count;
+    std::size_t padding_directory_count = rng::count_if(
+            padding_dir_candidates,
+            [&](const auto& dir) { return is_padding_directory(storage, dir); }
+    );
+    return  directories.size() - padding_directory_count;
 }
 
 

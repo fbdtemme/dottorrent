@@ -119,13 +119,6 @@ TEST_CASE("test hybrid hashing")
     CHECK_FALSE(hasher.done());
     hasher.wait();
     CHECK(hasher.done());
-
-    std::vector<bool> has_v2_data{};
-    for (const auto& e : storage) {
-        has_v2_data.push_back(e.has_v2_data());
-    }
-
-    CHECK(rng::all_of(has_v2_data, std::identity{}));
 }
 
 
