@@ -21,6 +21,7 @@ add_executable(dottorrent-tests
         percent_encoding.cpp
         magnet_uri.cpp
         hashers/test_isal_multibuffer_hasher.cpp
+        hashers/test_cryptographic_backends.cpp
         test_infohash.cpp)
 
 
