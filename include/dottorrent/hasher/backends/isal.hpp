@@ -10,25 +10,11 @@
 
 #include <gsl-lite/gsl-lite.hpp>
 
-#if defined __has_include
-    #if __has_include(<isa-l_crypto/md5_mb.h>) \
-            &&__has_include(<isa-l_crypto/sha256_mb.h>)\
-            &&__has_include(<isa-l_crypto/sha1_mb.h>)  \
-            &&__has_include(<isa-l_crypto/sha512_mb.h>)\
-            &&__has_include(<isa-l_crypto/endian_helper.h>)
-        #include <isa-l_crypto/md5_mb.h>
-        #include <isa-l_crypto/sha1_mb.h>
-        #include <isa-l_crypto/sha256_mb.h>
-        #include <isa-l_crypto/sha512_mb.h>
-        #include <isa-l_crypto/endian_helper.h>
-    #else
-#endif
-    #include <md5_mb.h>
-    #include <sha1_mb.h>
-    #include <sha256_mb.h>
-    #include <sha512_mb.h>
-    #include <endian_helper.h>
-#endif
+#include <isa-l_crypto/md5_mb.h>
+#include <isa-l_crypto/sha1_mb.h>
+#include <isa-l_crypto/sha256_mb.h>
+#include <isa-l_crypto/sha512_mb.h>
+#include <isa-l_crypto/endian_helper.h>
 
 #if defined(_WIN32) || defined(__MINGW32__)
 #define USE_ALLIGED_MALLOC
