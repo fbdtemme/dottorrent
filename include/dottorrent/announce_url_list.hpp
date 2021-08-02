@@ -261,3 +261,22 @@ private:
 
 std::vector<std::vector<std::string>> as_nested_vector(const announce_url_list& announces);
 } // namespace dottorrent
+
+
+namespace std
+{
+template <>
+class hash<dottorrent::announce_url_list> {
+public:
+    std::size_t operator()(const dottorrent::announce_url_list& value) {
+        std::size_t hash = std::hash<std::size_t>{}(value.size());
+
+        for (const dottorrent::announce_url& a: value) {
+            hash ^= std::hash<dottorrent::announce_url>{}(a);
+        }
+
+        return hash;
+    }
+};
+
+}

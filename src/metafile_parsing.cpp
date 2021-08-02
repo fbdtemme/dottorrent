@@ -330,6 +330,34 @@ void parse_source(const T& data, metafile& m)
     }
 }
 
+template <bc::bvalue_or_bview T>
+void parse_other_info_fields(const T& data, metafile& m)
+{
+    Expects(holds_dict(data));
+    const auto& dict = bc::get_dict(data);
+    Expects(dict.contains("info"));
+
+    const auto& info_view = dict.at("info");
+    const auto& info_dict = get_dict(info_view);
+
+    static const auto known_keys = std::set{
+        "length"sv,
+        "name"sv,
+        "files"sv,
+        "file tree"sv,
+        "piece length"sv,
+        "pieces"sv,
+        "meta version"sv,
+        "private"sv,
+        "source"sv,
+    };
+
+    for (const auto& [k, v] : info_dict) {
+        auto tmp = std::string(k);
+        if (known_keys.contains(k)) continue;
+        m.other_info_fields().insert_or_assign(std::string(k), v);
+    }
+}
 
 template <bc::bvalue_or_bview T>
 fs::path parse_path(const T& data)
@@ -764,6 +792,9 @@ template void parse_name<>(const bc::bview& data, metafile& m);
 template void parse_source<>(const bc::bvalue& data, metafile& m);
 template void parse_source<>(const bc::bview& data, metafile& m);
 
+template void parse_other_info_fields<>(const bc::bvalue& data, metafile& m);
+template void parse_other_info_fields<>(const bc::bview& data, metafile& m);
+
 template fs::path parse_path<>(const bc::bvalue& data);
 template fs::path parse_path<>(const bc::bview& data);
 
@@ -824,6 +855,7 @@ metafile parse_metafile(const T& data)
         detail::parse_piece_size(data, m);
         detail::parse_pieces_v1(data, m);
         detail::parse_source(data, m);
+        detail::parse_other_info_fields(data, m);
         return m;
     }
     // v2 or hybrid
@@ -841,7 +873,7 @@ metafile parse_metafile(const T& data)
         detail::parse_name(data, m);
         detail::parse_piece_size(data, m);
         detail::parse_source(data, m);
-
+        detail::parse_other_info_fields(data, m);
 
         if (detail::check_if_hybrid(data)) {
             // we need the v1 file list to get info about padding files and set the correct total file size for v1.

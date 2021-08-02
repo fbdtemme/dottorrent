@@ -132,6 +132,11 @@ public:
 
     void set_source(std::string_view source);
 
+    bool is_cross_seeding_enabled() const noexcept;
+
+    // Add a hash of the announce urls to the info dict
+    void enable_cross_seeding(bool flag = true) noexcept;
+
     bool is_private() const noexcept;
 
     void set_private(bool flag = true) noexcept;
@@ -148,6 +153,9 @@ public:
 
     std::size_t total_regular_file_size() const noexcept;
 
+    const std::map<std::string, bencode::bvalue>& other_info_fields() const noexcept;
+
+    std::map<std::string, bencode::bvalue>& other_info_fields() noexcept;
 
     bool operator==(const metafile& other) const = default;
 
@@ -167,6 +175,9 @@ private:
     bool private_ = false;
 
     std::string source_;
+    bool enable_cross_seeding_ = false;
+    std::map<std::string, bencode::bvalue> other_info_fields_;
+
     std::unordered_set<info_hash> similar_torrents_;
     std::unordered_set<std::string> collections_;
 };

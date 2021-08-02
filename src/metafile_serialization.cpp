@@ -60,6 +60,14 @@ bencode::bvalue make_bvalue_infodict_v1(const metafile& m)
     if (!m.source().empty()) {
         info.insert_or_assign("source", m.source());
     }
+    if (!m.other_info_fields().empty()) {
+        for (const auto& [k, v] : m.other_info_fields()) {
+            info.insert_or_assign(k, v);
+        }
+    }
+    if (m.is_cross_seeding_enabled()) {
+        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash(m.trackers()));
+    }
     return binfo;
 }
 
@@ -132,6 +140,14 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
     }
     if (!m.source().empty()) {
         info.insert_or_assign("source", m.source());
+    }
+    if (!m.other_info_fields().empty()) {
+        for (const auto& [k, v] : m.other_info_fields()) {
+            info.insert_or_assign(k, v);
+        }
+    }
+    if (m.is_cross_seeding_enabled()) {
+        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash(m.trackers()));
     }
     return binfo;
 }
@@ -235,6 +251,14 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
     }
     if (!m.source().empty()) {
         info.insert_or_assign("source", m.source());
+    }
+    if (!m.other_info_fields().empty()) {
+        for (const auto& [k, v] : m.other_info_fields()) {
+            info.insert_or_assign(k, v);
+        }
+    }
+    if (m.is_cross_seeding_enabled()) {
+        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash(m.trackers()));
     }
     return binfo;
 }
@@ -364,6 +388,16 @@ bencode::bvalue make_bvalue_hybrid(const metafile& m)
     return torrent;
 }
 
+
+std::string make_cross_seed_hash(const announce_url_list& announces)
+{
+    auto value = std::to_string(std::hash<announce_url_list>{}(announces));
+    md5_hash hash;
+    auto hasher = make_hasher(hash_function::md5);
+    hasher->update(value);
+    hasher->finalize_to(hash);
+    return hash.hex_string();
+};
 
 
 } // namespace dottorrent

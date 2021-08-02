@@ -211,6 +211,12 @@ const std::string& metafile::source() const
 void metafile::set_source(std::string_view source)
 { source_ = source; }
 
+bool metafile::is_cross_seeding_enabled() const noexcept
+{ return enable_cross_seeding_; }
+
+void metafile::enable_cross_seeding(bool flag) noexcept
+{ enable_cross_seeding_ = flag; }
+
 bool metafile::is_private() const noexcept
 { return private_; }
 
@@ -235,6 +241,13 @@ std::size_t metafile::total_file_size() const noexcept
 std::size_t metafile::total_regular_file_size() const noexcept
 { return storage_.total_regular_file_size(); }
 
+const std::map<std::string, bencode::bvalue>& metafile::other_info_fields() const noexcept {
+    return other_info_fields_;
+}
+
+std::map<std::string, bencode::bvalue>& metafile::other_info_fields() noexcept {
+    return other_info_fields_;
+}
 
 metafile read_metafile(std::istream& is)
 {

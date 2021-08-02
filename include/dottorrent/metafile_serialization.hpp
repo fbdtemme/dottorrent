@@ -25,6 +25,8 @@ bencode::bvalue make_bvalue_v2(const metafile& m);
 
 bencode::bvalue make_bvalue_hybrid(const metafile& m);
 
+std::string make_cross_seed_hash(const announce_url_list& announces);
+
 }
 
 namespace dottorrent {

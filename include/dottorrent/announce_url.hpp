@@ -77,4 +77,13 @@ template<std::size_t N>
 struct tuple_element<N, dottorrent::announce_url> {
     using type = decltype(get<N>(std::declval<dottorrent::announce_url>()));
 };
+
+template <>
+class hash<dottorrent::announce_url> {
+public:
+    std::size_t operator()(const dottorrent::announce_url& value) {
+        return std::hash<std::size_t>{}(value.tier) ^ std::hash<std::string>{}(value.url);
+    }
+};
+
 }
