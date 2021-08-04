@@ -82,8 +82,8 @@ magnet_uri make_magnet_uri(std::string_view uri)
         }
         else if (key == "xl") {
             std::size_t xl_value;
-            auto [ptr, ec] = std::from_chars(value.begin(), value.end(), xl_value);
-            if (ptr != value.end()) {
+            auto [ptr, ec] = std::from_chars(value.data(), value.data()+value.size(), xl_value);
+            if (auto end = value.data()+value.size(); ptr != end) {
                 throw std::invalid_argument("magnet xl field is not an integral value");
             }
             if (ec != std::errc{}) {

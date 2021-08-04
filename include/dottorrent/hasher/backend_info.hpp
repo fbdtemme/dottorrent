@@ -23,6 +23,8 @@
 #endif
 
 #if defined(DOTTORRENT_USE_WINCNG)
+#include <windows.h>
+#include <ntstatus.h>
 #include <bcrypt.h>
 #endif
 

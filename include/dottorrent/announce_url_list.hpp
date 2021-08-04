@@ -140,14 +140,19 @@ public:
     auto erase(iterator pos)
     {
         Expects(announce_list_.begin() <= pos);
-        Expects(pos < announce_list_.end());
+        Expects(pos <= announce_list_.end());
+
+        if (pos == announce_list_.end()) {
+            return announce_list_.end();
+        }
 
         auto pos_tier = pos->tier;
         auto next_it = announce_list_.erase(pos);
 
         // update higher announces if tracker was the last of a tier and
         // erasing created a gap in the tier range.
-        if (next_it->tier != pos_tier) {
+
+        if (next_it != announce_list_.end() && next_it->tier != pos_tier) {
             auto tier_begin = get_tier_begin(pos_tier);
             // check if we deleted the last element of the tier.
             if (tier_begin->tier != pos_tier) {
@@ -159,7 +164,9 @@ public:
     }
     auto erase(const announce_url& announce)
     {
-        return erase(find(announce));
+        if (auto it = find(announce); it != announce_list_.end())
+            return erase(it);
+        return announce_list_.end();
     }
 
     //   Lookup                                                                   //
