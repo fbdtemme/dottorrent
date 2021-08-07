@@ -8,6 +8,11 @@
 #include <charconv>
 #include <ranges>
 
+#if defined(_MSC_VER)
+#undef min
+#undef max
+#endif
+
 namespace dottorrent {
 
 namespace rng = std::ranges;
@@ -88,8 +93,9 @@ inline constexpr void byte_to_hex_uppercase(std::byte c, char * __restrict out)
 template <std::output_iterator<std::byte> OutputIt>
 inline constexpr void from_hexadecimal_string(OutputIt out, std::string_view hex_string)
 {
-    const char* it = hex_string.begin();
-    while (it != hex_string.end()) {
+    auto it = hex_string.data();
+    auto end = hex_string.data() + hex_string.size();
+    while (it != end) {
         char v;
         auto r = std::from_chars(it, it+2, v, /*base*/ 16);
 

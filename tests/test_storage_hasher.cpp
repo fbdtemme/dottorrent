@@ -244,7 +244,7 @@ TEST_CASE("empty file hashing")
         CHECK(hasher.done());
 
         CHECK(storage.piece_count() == 1);
-        CHECK(info_hash_v1(m).hex_string() == "a4fb0feee559d6ca7837adbf0829c11abb222c01");
+        CHECK(info_hash_v1(m).hex_string() == "1fffc94f44ceee8b9fe3f84a585d3434e2ad39d5");
     }
 
 

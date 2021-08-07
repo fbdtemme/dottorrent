@@ -5,8 +5,8 @@
 #include <string>
 
 #include <windows.h>
-#include <bcrypt.h>
 #include <ntstatus.h>
+#include <bcrypt.h>
 
 namespace wincng {
 
