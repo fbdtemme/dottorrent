@@ -158,7 +158,11 @@ public:
         return rng::count_if(files_, [](const file_entry& e) { return !e.is_padding_file(); });
     };
 
-    enum file_mode file_mode() const;
+    /// Sets the file mode for single file torrents.
+    /// This value will be ignored when there are multiple files or no files.
+    void set_file_mode(enum file_mode mode);
+
+    enum file_mode file_mode() const noexcept;
 
     /// Return the protocol version this storage object supports.
     ///
@@ -250,6 +254,7 @@ private:
     /// If root directory is a single directory this file is not associated with a physical
     /// storage path.
     fs::path root_directory_ {};
+    enum file_mode file_mode_ = file_mode::empty;
     std::vector<file_entry> files_ {};
     /// v1 pieces
     std::vector<sha1_hash> pieces_ {};

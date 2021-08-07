@@ -523,10 +523,12 @@ void parse_file_list_v1(const T& data, metafile& m)
             for (auto f : l) {
                 storage.add_file(parse_file_entry_v1(f));
             }
+            storage.set_file_mode(file_mode::multi);
         }
-            // single file torrent
+        // single file torrent
         else {
             storage.add_file(parse_file_entry_v1(dict.at("info")));
+            storage.set_file_mode(file_mode::single);
         }
     }
     catch (bencode::bad_access & e) {

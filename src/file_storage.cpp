@@ -76,17 +76,19 @@ void file_storage::remove_file(const file_entry& entry)
     }
 }
 
-file_mode file_storage::file_mode() const
+void file_storage::set_file_mode(enum file_mode mode)
+{
+    file_mode_ = mode;
+}
+
+file_mode file_storage::file_mode() const noexcept
 {
     // empty torrent
     auto fc = file_count();
     if (fc == 0) return file_mode::empty;
     // one file
     if (fc == 1) {
-        auto& f = files_[0].path();
-        std::size_t components_count = std::distance(std::begin(f), std::end(f));
-        // file contains no directories relative to root path.
-        if (components_count == 1) return file_mode::single;
+        return file_mode_;
     }
     // more then one file
     return file_mode::multi;

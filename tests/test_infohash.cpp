@@ -1,7 +1,11 @@
 #include <catch2/catch.hpp>
 #include <dottorrent/info_hash.hpp>
+#include <dottorrent/metafile.hpp>
+
+#include <filesystem>
 
 namespace dt = dottorrent;
+namespace fs = std::filesystem;
 
 TEST_CASE("test info_hash class")
 {
@@ -25,4 +29,15 @@ TEST_CASE("test info_hash class")
         CHECK(h.get_binary(dt::protocol::v2) == std::string_view(v2_reference));
         CHECK(h.get_hex(dt::protocol::v2) == v2_reference.hex_string());
     }
+}
+
+
+TEST_CASE("test infohash bug")
+{
+    auto f = fs::path(TEST_DIR) / "resources/issue22.torrent";
+    auto m = dt::load_metafile(f);
+    auto hash = dt::info_hash_v1(m);
+    auto hash_hex = hash.hex_string();
+
+    CHECK(hash_hex == "79cdf0937d3a6e35200aac218a36a6abb8e4fa33");
 }
