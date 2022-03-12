@@ -294,16 +294,16 @@ file_entry make_file_entry(fs::path file, const fs::path& root_directory, file_o
         }
     }
 
-    return file_entry(std::move(relative_file), file_size,
-                      attributes, std::move(symlink_path));
+    return {std::move(relative_file), file_size,
+                      attributes, std::move(symlink_path)};
 }
 
 
 file_entry make_padding_file_entry(std::size_t padding_size)
 {
     using namespace fmt::literals;
-    auto path = fs::path(".pad/{}"_format(padding_size));
-    return file_entry(path, padding_size, file_attributes::padding_file);
+    auto path = fs::path(fmt::format(".pad/{}", padding_size));
+    return {path, padding_size, file_attributes::padding_file};
 }
 
 
