@@ -66,7 +66,7 @@ bencode::bvalue make_bvalue_infodict_v1(const metafile& m)
         }
     }
     if (m.is_cross_seeding_enabled()) {
-        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash(m.trackers()));
+        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash());
     }
     return binfo;
 }
@@ -147,7 +147,7 @@ bencode::bvalue make_bvalue_infodict_v2(const metafile& m)
         }
     }
     if (m.is_cross_seeding_enabled()) {
-        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash(m.trackers()));
+        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash());
     }
     return binfo;
 }
@@ -258,7 +258,7 @@ bencode::bvalue make_bvalue_infodict_hybrid(const metafile& m)
         }
     }
     if (m.is_cross_seeding_enabled()) {
-        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash(m.trackers()));
+        info.insert_or_assign("cross_seed_entry", make_cross_seed_hash());
     }
     return binfo;
 }
@@ -389,9 +389,10 @@ bencode::bvalue make_bvalue_hybrid(const metafile& m)
 }
 
 
-std::string make_cross_seed_hash(const announce_url_list& announces)
+std::string make_cross_seed_hash()
 {
-    auto value = std::to_string(std::hash<announce_url_list>{}(announces));
+    srand(time(NULL));
+    auto value = std::to_string(rand());
     md5_hash hash;
     auto hasher = make_hasher(hash_function::md5);
     hasher->update(value);
