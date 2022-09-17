@@ -10,7 +10,7 @@
 #include <openssl/crypto.h>
 #endif
 
-#if defined(DOTTORRENT_USE_ISAL)
+#if defined(DOTTORRENT_USE_ISAL_CRYPTO)
 #include <isa-l_crypto.h>
 #endif
 
@@ -40,7 +40,7 @@ cryptographic_backends()
 #if defined(DOTTORRENT_USE_OPENSSL)
     versions["openssl"] = OPENSSL_VERSION_TEXT;
 #endif
-#if defined(DOTTORRENT_USE_ISAL)
+#if defined(DOTTORRENT_USE_ISAL_CRYPTO)
     versions["isa-l_crypto"] = MAKE_VERSION_STRING(ISAL_CRYPTO_MAJOR_VERSION, ISAL_CRYPTO_MINOR_VERSION, ISAL_CRYPTO_PATCH_VERSION);
 #endif
 #if defined(DOTTORRENT_USE_GCRYPT)

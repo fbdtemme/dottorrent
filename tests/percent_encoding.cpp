@@ -1,8 +1,7 @@
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 #include "dottorrent/percent_encoding.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <fmt/format.h>
 
 TEST_CASE("test is_numeric")

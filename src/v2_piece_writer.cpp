@@ -148,7 +148,7 @@ void v2_piece_writer::set_finished_piece(const v1_hashed_piece& finished_piece) 
 }
 
 void v2_piece_writer::set_finished_piece(const v2_hashed_piece& finished_piece) {
-#ifdef DOTTORRENT_USE_ISAL
+#ifdef DOTTORRENT_USE_ISAL_CRYPTO
     static thread_local std::unique_ptr<multi_buffer_hasher> hasher = make_multi_buffer_hasher(hash_function::sha256);
 #else
     static thread_local std::unique_ptr<single_buffer_hasher> hasher = make_hasher(hash_function::sha256);

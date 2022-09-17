@@ -104,7 +104,7 @@ public:
         }
     }
 
-#if defined(DOTTORRENT_USE_ISAL)
+#if defined(DOTTORRENT_USE_ISAL_CRYPTO)
     void update(multi_buffer_hasher& hasher)
     {
         for (std::size_t layer = tree_height(); layer > 0; -- layer) {
@@ -139,7 +139,7 @@ public:
     /// Calculate the root and inner hashes from the leaf hashes.
     void update()
     {
-#ifdef DOTTORRENT_USE_ISAL
+#ifdef DOTTORRENT_USE_ISAL_CRYPTO
         auto hasher = make_multi_buffer_hasher(FN);
 #else
         auto hasher = make_hasher(FN);

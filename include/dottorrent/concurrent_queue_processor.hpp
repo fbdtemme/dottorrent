@@ -132,7 +132,7 @@ private:
     void run(std::stop_token stop_token, int thread_idx)
     {
         Ensures(stop_token.stop_possible());
-        Ensures(done_[thread_idx] == false);
+        Ensures(!(done_[thread_idx]));
 
         std::optional<parameter_type> item {};
 

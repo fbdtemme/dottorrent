@@ -1,8 +1,7 @@
 //
 // Created by fbdtemme on 17/07/19.
 //
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 #include <dottorrent/announce_url_list.hpp>
 #include <bencode/bencode.hpp>
 #include <dottorrent/serialization/announce_url_list.hpp>

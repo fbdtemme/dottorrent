@@ -1,7 +1,6 @@
 #include <fstream>
 #include <filesystem>
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 #include <chrono>
 
 #include <bencode/bencode.hpp>
@@ -20,7 +19,7 @@ struct torrent_fixture
                 std::istreambuf_iterator<char>{});
         descriptors = bencode::decode_view(buffer);
         bview = descriptors.get_root();
-        bvalue = bencode::bvalue(bview);
+        bvalue = bview;
     }
 
     std::string buffer {};

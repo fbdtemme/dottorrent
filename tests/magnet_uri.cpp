@@ -1,10 +1,9 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <filesystem>
 
 #include "dottorrent/magnet_uri.hpp"
 
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 namespace dt = dottorrent;
 namespace fs = std::filesystem;
 

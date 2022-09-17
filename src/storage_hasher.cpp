@@ -36,7 +36,7 @@ storage_hasher::storage_hasher(file_storage& storage, const storage_hasher_optio
 
     auto piece_size = storage.piece_size();
 
-#ifdef DOTTORRENT_USE_ISAL
+#ifdef DOTTORRENT_USE_ISAL_CRYPTO
     if (options.min_io_block_size) {
         io_block_size_ = std::max(piece_size, *options.min_io_block_size);
     } else {
@@ -104,7 +104,7 @@ void storage_hasher::start() {
     }
 
     if (protocol_ == protocol::v1) {
-#ifdef DOTTORRENT_USE_ISAL
+#ifdef DOTTORRENT_USE_ISAL_CRYPTO
         if (enable_multi_buffer_hashing_)
             hasher_ = std::make_unique<v1_chunk_hasher_mb>(storage_, queue_capacity_, threads_);
         else
@@ -125,7 +125,7 @@ void storage_hasher::start() {
     }
     else {
 
-#ifdef DOTTORRENT_USE_ISAL
+#ifdef DOTTORRENT_USE_ISAL_CRYPTO
         if (enable_multi_buffer_hashing_)
             hasher_ = std::make_unique<v2_chunk_hasher_mb>(
                     storage_, queue_capacity_, protocol_ == protocol::hybrid, threads_);

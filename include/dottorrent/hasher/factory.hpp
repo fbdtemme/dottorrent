@@ -20,7 +20,7 @@
 #include "dottorrent/hasher/wolfssl_hasher.hpp"
 #endif
 
-#if defined(DOTTORRENT_USE_ISAL)
+#if defined(DOTTORRENT_USE_ISAL_CRYPTO)
 #include "dottorrent/hasher/isal_multi_buffer_hasher.hpp"
 #include "dottorrent/hasher/backends/isal.hpp"
 #endif
@@ -48,7 +48,7 @@ inline std::unique_ptr<single_buffer_hasher> make_hasher(hash_function f)
 /// Return a polymorphic hasher for given algorithm
 inline std::unique_ptr<multi_buffer_hasher> make_multi_buffer_hasher(hash_function f)
 {
-#if defined(DOTTORRENT_USE_ISAL)
+#if defined(DOTTORRENT_USE_ISAL_CRYPTO)
     return std::make_unique<isal_multi_buffer_hasher>(f);
 #endif
     return nullptr;

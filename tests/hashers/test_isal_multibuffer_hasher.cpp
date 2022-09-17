@@ -2,8 +2,7 @@
 #include <fstream>
 #include <filesystem>
 
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 #include "dottorrent/hasher/factory.hpp"
 #include "dottorrent/hash.hpp"
 
