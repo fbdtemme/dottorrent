@@ -67,7 +67,6 @@ add_library(dottorrent::dottorrent ALIAS dottorrent)
 target_compile_features(dottorrent PUBLIC cxx_std_20)
 
 string(TOLOWER ${DOTTORRENT_CRYPTO_LIB} DOTTORRENT_CRYPTO_LIB)
-string(TOLOWER ${DOTTORRENT_MB_CRYPTO_LIB} DOTTORRENT_MB_CRYPTO_LIB)
 
 if (DOTTORRENT_CRYPTO_LIB STREQUAL "openssl")
     find_package(OpenSSL REQUIRED)
