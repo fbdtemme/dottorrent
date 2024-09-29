@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(dottorrent
         DESCRIPTION "A C++20 torrent metafile library"
-        VERSION 0.4.0
+        VERSION 0.5.0
         LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules)
@@ -11,12 +11,17 @@ include(CTest)
 include(SanitizersConfig)
 include(GNUInstallDirs)
 
-option(DOTTORRENT_TESTS      "Build tests" ON)
+find_package(fmt CONFIG REQUIRED)
+find_package(expected-lite CONFIG REQUIRED)
+find_package(gsl-lite CONFIG REQUIRED)
+find_package(bencode CONFIG REQUIRED)
+
+option(DOTTORRENT_BUILD_TESTS      "Build tests" ON)
 option(DOTTORRENT_COVERAGE   "Enable coverage flags" OFF)
 set(DOTTORRENT_CRYPTO_LIB    "openssl" CACHE STRING
     "The cryptographic library to link against. Options are: openssl, wincng, wolfssl")
-set(DOTTORRENT_MB_CRYPTO_LIB "openssl" CACHE STRING
-        "The multibuffer cryptographic library to link against. Options are: none, isal")
+set(DOTTORRENT_USE_ISAL_CRYPTO OFF CACHE BOOL
+        "Use the ISA-L Crypto library for multi-buffer hashing.")
 
 option(DOTTORRENT_INSTALL            "Generate an install target" ON)
 
@@ -61,8 +66,6 @@ add_library(dottorrent
 add_library(dottorrent::dottorrent ALIAS dottorrent)
 target_compile_features(dottorrent PUBLIC cxx_std_20)
 
-include(external/external.cmake)
-
 string(TOLOWER ${DOTTORRENT_CRYPTO_LIB} DOTTORRENT_CRYPTO_LIB)
 string(TOLOWER ${DOTTORRENT_MB_CRYPTO_LIB} DOTTORRENT_MB_CRYPTO_LIB)
 
@@ -73,12 +76,12 @@ if (DOTTORRENT_CRYPTO_LIB STREQUAL "openssl")
     message(STATUS "Using cryptographic library: OpenSSL")
 
 elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wincng")
-    target_link_libraries(${PROJECT_NAME}   PUBLIC bcrypt)
+    target_link_libraries(${PROJECT_NAME}   PUBLIC wincng)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WINCNG)
     message(STATUS "Using cryptographic library: WinCNG")
 
 elseif(DOTTORRENT_CRYPTO_LIB STREQUAL "wolfssl")
-    include(${CMAKE_CURRENT_LIST_DIR}/external/wolfSSL.cmake)
+    find_package(WolfSSL CONFIG REQUIRED)
     target_link_libraries(${PROJECT_NAME} PUBLIC wolfssl)
     target_compile_definitions(${PROJECT_NAME} PUBLIC DOTTORRENT_USE_WOLFSSL)
     message(STATUS "Using cryptographic library: wolfSSL")
@@ -86,12 +89,11 @@ else()
     message(FATAL_ERROR "Unrecognised crypto library: ${DOTTORRENT_CRYPTO_LIB}")
 endif()
 
-if (DOTTORRENT_MB_CRYPTO_LIB STREQUAL "isal")
-    include(${CMAKE_CURRENT_LIST_DIR}/external/isa-l_crypto.cmake)
-    target_link_libraries(${PROJECT_NAME}        PUBLIC ISAL::Crypto)
-    get_property(dirs TARGET ${PROJECT_NAME} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-    target_compile_definitions(${PROJECT_NAME}   PUBLIC DOTTORRENT_USE_ISAL)
-    message(STATUS "Using multibuffer cryptographic library: Intel ISA-L")
+if (DOTTORRENT_USE_ISAL_CRYPTO)
+    find_package(unofficial-isal-crypto CONFIG REQUIRED)
+    target_link_libraries(${PROJECT_NAME}        PUBLIC unofficial::isal-crypto::isal-crypto)
+    target_compile_definitions(${PROJECT_NAME}   PUBLIC DOTTORRENT_USE_ISAL_CRYPTO)
+    message(STATUS "Using multibuffer cryptographic library: Intel ISA-L Crypto")
 endif()
 
 find_package(Threads REQUIRED)
@@ -117,8 +119,8 @@ if (DOTTORRENT_BUILD_COVERAGE)
     set(CMAKE_C_FLAGS --coverage)
 endif()
 
-if (DOTTORRENT_TESTS)
-add_subdirectory(tests)
+if (DOTTORRENT_BUILD_TESTS)
+    add_subdirectory(tests)
 endif()
 
 if (DOTTORRENT_INSTALL)
@@ -158,7 +160,7 @@ if (DOTTORRENT_INSTALL)
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
             LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
-    # Install the export set to ena ble importing targets from the build tree
+    # Install the export set to enable importing targets from the build tree
     export(EXPORT ${dottorrent_targets_export_name}
             FILE ${dottorrent_targets_file}
             NAMESPACE ${PROJECT_NAME}::)

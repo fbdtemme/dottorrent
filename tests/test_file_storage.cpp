@@ -2,7 +2,7 @@
 //// Created by fbdtemme on 11/02/19.
 ////
 //
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <iostream>
 
 #include "dottorrent/file_entry.hpp"

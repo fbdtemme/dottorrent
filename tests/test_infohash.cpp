@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 #include <dottorrent/info_hash.hpp>
 #include <dottorrent/metafile.hpp>
 

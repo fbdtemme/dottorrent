@@ -1,0 +1,13 @@
+{
+  "registries": [
+    {
+      "kind": "git",
+      "baseline": "f3f7209f61e213012ab1caf8582b07f5d1b3fd26",
+      "repository": "/home/fbdtemme/CLionProjects/vcpkg-registry",
+      "packages": [
+        "bencode",
+        "isal-crypto"
+      ]
+    }
+  ]
+}

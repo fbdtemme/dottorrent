@@ -1,4 +1,4 @@
-#ifdef DOTTORRENT_USE_ISAL
+#ifdef DOTTORRENT_USE_ISAL_CRYPTO
 #include <system_error>
 #include "dottorrent/hasher/backends/isal.hpp"
 namespace isal

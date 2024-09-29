@@ -1,5 +1,4 @@
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 #include "dottorrent/hash.hpp"
 #include "dottorrent/hash_function.hpp"
 #include "dottorrent/hasher/factory.hpp"

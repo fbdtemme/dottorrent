@@ -2,8 +2,7 @@
 // Created by fbdtemme on 7/11/20.
 //
 
-#include <catch2/catch.hpp>
-
+#include <catch2/catch_all.hpp>
 #include <filesystem>
 #include <ranges>
 

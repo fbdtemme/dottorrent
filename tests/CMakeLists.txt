@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.22)
 
+find_package(Catch2 CONFIG REQUIRED)
 include(Catch)
 
 add_executable(dottorrent-tests
@@ -26,8 +27,9 @@ add_executable(dottorrent-tests
 
 
 target_link_libraries(dottorrent-tests
-        Catch2::Catch2
-        dottorrent
+        PUBLIC
+        Catch2::Catch2WithMain
+        dottorrent::dottorrent
 )
 
 if (DOTTORRENT_CRYPTO_LIB STREQUAL wolfssl)
