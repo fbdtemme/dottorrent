@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "dottorrent",
-  "version": "0.4.0",
-  "builtin-baseline": "9259a0719d94c402aae2ab7975bc096afdec15df",
+  "version": "0.5.0",
+  "builtin-baseline": "0e47c1985273129e4d0ee52ff73bed9125555de8",
   "dependencies": [
     {
       "name": "fmt",

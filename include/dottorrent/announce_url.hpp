@@ -87,3 +87,20 @@ public:
 };
 
 }
+
+
+namespace fmt
+{
+    template <> class formatter<dottorrent::announce_url> {
+    public:
+        constexpr auto parse (format_parse_context& ctx)
+        {
+            return ctx.begin();
+        }
+
+        template <typename Context>
+        constexpr auto format (const dottorrent::announce_url& a, Context& ctx) const {
+            return format_to(ctx.out(), "{}", std::string_view(a));
+        }
+    };
+}

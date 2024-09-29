@@ -17,9 +17,7 @@
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
         },
-        "VCPKG_MANIFEST_FEATURES": "tests",
-        "DOTTORRENT_BUILD_TESTS": true,
-        "DOTTORRENT_BUILD_DOCS": true
+        "VCPKG_MANIFEST_FEATURES": "tests"
       }
     },
     {
@@ -38,10 +36,7 @@
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
         },
-        "VCPKG_MANIFEST_FEATURES": "tests;isal",
-        "DOTTORRENT_BUILD_TESTS": true,
-        "DOTTORRENT_BUILD_DOCS": true,
-        "DOTTORRENT_MB_CRYPTO_LIB": "isal"
+        "VCPKG_MANIFEST_FEATURES": "tests;isal"
       }
     },
     {
@@ -60,9 +55,7 @@
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
         },
-        "VCPKG_MANIFEST_FEATURES": "tests",
-        "DOTTORRENT_BUILD_TESTS": true,
-        "DOTTORRENT_BUILD_DOCS": true
+        "VCPKG_MANIFEST_FEATURES": "tests"
       }
     },
     {
@@ -81,9 +74,7 @@
           "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
           "type": "FILEPATH"
         },
-        "VCPKG_MANIFEST_FEATURES": "tests;isal",
-        "DOTTORRENT_BUILD_TESTS": true,
-        "DOTTORRENT_BUILD_DOCS": true
+        "VCPKG_MANIFEST_FEATURES": "tests;isal"
       }
     }
   ]
